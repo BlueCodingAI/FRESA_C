@@ -20,14 +20,14 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const file = formData.get('file') as File
-    const type = formData.get('type') as string // 'audio' or 'timestamps'
+    const type = formData.get('type') as string // 'audio', 'timestamps', or 'image'
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 })
     }
 
-    if (!type || !['audio', 'timestamps'].includes(type)) {
-      return NextResponse.json({ error: 'Invalid file type. Must be "audio" or "timestamps"' }, { status: 400 })
+    if (!type || !['audio', 'timestamps', 'image'].includes(type)) {
+      return NextResponse.json({ error: 'Invalid file type. Must be "audio", "timestamps", or "image"' }, { status: 400 })
     }
 
     // Validate file extensions
@@ -42,8 +42,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Timestamps files must be .json' }, { status: 400 })
     }
 
+    if (type === 'image' && !['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(fileExtension || '')) {
+      return NextResponse.json({ error: 'Image files must be .jpg, .jpeg, .png, .gif, or .webp' }, { status: 400 })
+    }
+
+    // Validate image file size (max 10MB)
+    if (type === 'image' && file.size > 10 * 1024 * 1024) {
+      return NextResponse.json({ error: 'Image size must be less than 10MB' }, { status: 400 })
+    }
+
     // Create directory if it doesn't exist
-    const uploadDir = type === 'audio' ? 'public/audio' : 'public/timestamps'
+    const uploadDir = type === 'audio' ? 'public/audio' : type === 'timestamps' ? 'public/timestamps' : 'public/images'
     const uploadPath = join(process.cwd(), uploadDir)
 
     if (!existsSync(uploadPath)) {
@@ -64,7 +73,9 @@ export async function POST(request: NextRequest) {
     // Return the public URL path (remove 'public/' prefix as Next.js serves from root)
     const publicUrl = type === 'audio' 
       ? `/audio/${uniqueFileName}`
-      : `/timestamps/${uniqueFileName}`
+      : type === 'timestamps'
+      ? `/timestamps/${uniqueFileName}`
+      : `/images/${uniqueFileName}`
 
     return NextResponse.json({ 
       success: true, 

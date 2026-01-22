@@ -64,6 +64,7 @@ export async function GET(
         // The browser will handle 404s gracefully, and files might be generated dynamically
         audioUrl: section.audioUrl || null,
         timestampsUrl: section.timestampsUrl || null,
+        imageUrl: section.imageUrl || null,
       })),
       quizQuestions: chapter.quizQuestions.map((question: any) => ({
         ...question,

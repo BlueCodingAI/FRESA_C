@@ -61,7 +61,7 @@ export async function PUT(
     }
 
     const { id } = await params
-    const { sectionNumber, title, text, type, audioUrl, timestampsUrl, order } = await request.json()
+    const { sectionNumber, title, text, type, audioUrl, timestampsUrl, imageUrl, order } = await request.json()
 
     // Validate that audio and timestamps files exist if URLs are provided
     let validatedAudioUrl = audioUrl || null
@@ -89,6 +89,19 @@ export async function PUT(
       }
     }
 
+    // Validate image file if URL is provided (only for local files, allow external URLs)
+    let validatedImageUrl = imageUrl || null
+    if (validatedImageUrl && validatedImageUrl.startsWith('/')) {
+      // Only validate local files (starting with /), allow external URLs
+      const imagePath = validatedImageUrl.startsWith('/') ? validatedImageUrl.slice(1) : validatedImageUrl
+      const fullImagePath = join(process.cwd(), 'public', imagePath)
+      
+      if (!existsSync(fullImagePath)) {
+        console.warn(`⚠️ Image file not found: ${fullImagePath}. Keeping URL anyway (may be external or uploaded later).`)
+        // Don't set to null - allow the URL to be saved even if file doesn't exist yet
+      }
+    }
+
     const section = await prisma.section.update({
       where: { id },
       data: {
@@ -98,6 +111,7 @@ export async function PUT(
         type,
         audioUrl: validatedAudioUrl,
         timestampsUrl: validatedTimestampsUrl,
+        imageUrl: validatedImageUrl,
         order: order || 0,
       },
     })

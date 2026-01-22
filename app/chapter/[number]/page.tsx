@@ -24,6 +24,7 @@ interface Section {
   type: string;
   audioUrl?: string | null;
   timestampsUrl?: string | null;
+  imageUrl?: string | null;
 }
 
 interface Chapter {
@@ -124,7 +125,13 @@ export default function ChapterPage() {
                 type: section.type || 'content',
                 audioUrl: section.audioUrl,
                 timestampsUrl: section.timestampsUrl,
+                imageUrl: section.imageUrl || null,
               });
+              
+              // Debug: Log image URL if present
+              if (section.imageUrl) {
+                console.log(`[Chapter Page] Section "${section.title}" has image:`, section.imageUrl);
+              }
             }
           });
         }
@@ -451,18 +458,53 @@ export default function ChapterPage() {
           </div>
         </div>
 
-        <div className="flex-1 flex items-start justify-center py-6 px-4 overflow-y-auto overflow-x-hidden">
+        <div className="flex-1 flex items-start justify-center py-6 px-4 overflow-x-hidden">
           <div className="w-full max-w-5xl">
-            <div className="bg-[#1e3a5f] border border-blue-500/30 rounded-2xl shadow-2xl animate-scale-in overflow-hidden flex flex-col max-h-[85vh]">
+            <div className="bg-[#1e3a5f] border border-blue-500/30 rounded-2xl shadow-2xl animate-scale-in overflow-hidden flex flex-col">
               {/* Header - Fixed */}
-              <div className="px-6 md:px-8 pt-6 md:pt-8 pb-4 border-b border-blue-500/20 flex-shrink-0">
+              <div className="px-6 md:px-8 pt-6 md:pt-8 pb-6 md:pb-8 border-b border-blue-500/20 flex-shrink-0">
                 <h2 className="text-xl md:text-2xl font-bold text-white break-words">
                   {currentSectionData?.title}
                 </h2>
               </div>
               
-              {/* Content - Scrollable */}
-              <div className="flex-1 overflow-y-auto px-6 md:px-8 py-6 md:py-8" style={{ wordWrap: "break-word", overflowWrap: "break-word" }}>
+              {/* Section Image - Full width, no side padding, edge-to-edge, cropped sides */}
+              {currentSectionData?.imageUrl && (
+                <div className="w-full overflow-hidden">
+                  <div className="relative w-full group">
+                    <div className="relative overflow-hidden shadow-2xl border-y-2 border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 backdrop-blur-sm">
+                      <div className="relative w-full" style={{ paddingLeft: '15%', paddingRight: '15%', marginLeft: '-15%', marginRight: '-15%', width: '130%' }}>
+                        <img
+                          src={currentSectionData.imageUrl}
+                          alt={currentSectionData.title || "Section image"}
+                          className="w-full h-auto max-h-[400px] object-contain md:object-fill md:h-[400px] transition-transform duration-500 group-hover:scale-[1.01]"
+                          style={{ 
+                            width: '100%', 
+                            display: 'block'
+                          }}
+                          loading="lazy"
+                          onError={(e) => {
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            const parent = target.parentElement;
+                            if (parent) {
+                              parent.innerHTML = '<div class="p-8 text-center text-gray-400">Image not found</div>';
+                            }
+                          }}
+                        />
+                      </div>
+                      {/* Decorative gradient overlay on hover */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/0 via-transparent to-transparent opacity-0 group-hover:opacity-20 transition-opacity duration-500 pointer-events-none" />
+                    </div>
+                    {/* Glow effect */}
+                    <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10" />
+                  </div>
+                </div>
+              )}
+
+              {/* Content - No scrollbar, content fits naturally */}
+              <div className="px-6 md:px-8 py-6 md:py-8" style={{ wordWrap: "break-word", overflowWrap: "break-word" }}>
+
                 {currentSectionData?.text && (
                   <AudioPlayer
                     key={currentSection}
@@ -482,6 +524,7 @@ export default function ChapterPage() {
                     highlightQuery={searchHighlight}
                   />
                 )}
+                
                 {currentSectionData && !currentSectionData.audioUrl && (
                   <div className="text-yellow-400 text-sm mt-4">
                     ⚠️ Audio not available for this section yet. Please generate audio in the admin panel.

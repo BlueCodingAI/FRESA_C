@@ -14,6 +14,7 @@ interface Section {
   type: string;
   audioUrl: string | null;
   timestampsUrl: string | null;
+  imageUrl: string | null;
   order: number;
 }
 
@@ -77,10 +78,12 @@ export default function ChapterEditPage() {
     type: "content",
     audioUrl: "",
     timestampsUrl: "",
+    imageUrl: "",
     order: 0,
   });
   const [uploadingAudio, setUploadingAudio] = useState(false);
   const [uploadingTimestamps, setUploadingTimestamps] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [generatingAudio, setGeneratingAudio] = useState(false);
   const [showTTSSettings, setShowTTSSettings] = useState(false);
   
@@ -108,12 +111,14 @@ export default function ChapterEditPage() {
     };
   });
 
-  const handleFileUpload = async (file: File, type: 'audio' | 'timestamps') => {
+  const handleFileUpload = async (file: File, type: 'audio' | 'timestamps' | 'image') => {
     try {
       if (type === 'audio') {
         setUploadingAudio(true);
-      } else {
+      } else if (type === 'timestamps') {
         setUploadingTimestamps(true);
+      } else if (type === 'image') {
+        setUploadingImage(true);
       }
 
       const token = getToken();
@@ -133,8 +138,10 @@ export default function ChapterEditPage() {
         const data = await response.json();
         if (type === 'audio') {
           setSectionForm({ ...sectionForm, audioUrl: data.url });
-        } else {
+        } else if (type === 'timestamps') {
           setSectionForm({ ...sectionForm, timestampsUrl: data.url });
+        } else if (type === 'image') {
+          setSectionForm({ ...sectionForm, imageUrl: data.url });
         }
         alert(`File uploaded successfully! URL: ${data.url}`);
       } else {
@@ -147,9 +154,17 @@ export default function ChapterEditPage() {
     } finally {
       if (type === 'audio') {
         setUploadingAudio(false);
-      } else {
+      } else if (type === 'timestamps') {
         setUploadingTimestamps(false);
+      } else if (type === 'image') {
+        setUploadingImage(false);
       }
+    }
+  };
+
+  const handleRemoveImage = () => {
+    if (confirm('Are you sure you want to remove this image?')) {
+      setSectionForm({ ...sectionForm, imageUrl: "" });
     }
   };
 
@@ -213,16 +228,22 @@ export default function ChapterEditPage() {
         : `/api/admin/sections`;
       const method = sectionId ? "PUT" : "POST";
 
+      // Convert empty strings to null for optional fields
+      const sectionData = {
+        ...sectionForm,
+        chapterId: chapterId === "new" ? null : chapterId,
+        audioUrl: sectionForm.audioUrl || null,
+        timestampsUrl: sectionForm.timestampsUrl || null,
+        imageUrl: sectionForm.imageUrl || null,
+      };
+
       const response = await fetch(url, {
         method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          ...sectionForm,
-          chapterId: chapterId === "new" ? null : chapterId,
-        }),
+        body: JSON.stringify(sectionData),
       });
 
       if (response.ok) {
@@ -236,6 +257,7 @@ export default function ChapterEditPage() {
           type: "content",
           audioUrl: "",
           timestampsUrl: "",
+          imageUrl: "",
           order: 0,
         });
       }
@@ -1881,6 +1903,7 @@ export default function ChapterEditPage() {
                   type: "content",
                   audioUrl: "",
                   timestampsUrl: "",
+                  imageUrl: "",
                   order: sections.length,
                 });
               }}
@@ -1918,6 +1941,7 @@ export default function ChapterEditPage() {
                         <span>Order: {section.order}</span>
                         {section.audioUrl && <span>Audio: ✓</span>}
                         {section.timestampsUrl && <span>Timestamps: ✓</span>}
+                        {section.imageUrl && <span>Image: ✓</span>}
                       </div>
                     </div>
                     <div className="flex gap-2 ml-4">
@@ -2181,6 +2205,68 @@ export default function ChapterEditPage() {
                     </label>
                   </div>
                   <p className="text-xs text-gray-400 mt-1">Upload JSON file or enter URL manually</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                    Section Image
+                  </label>
+                  {sectionForm.imageUrl ? (
+                    <div className="mb-3">
+                      <div className="relative inline-block">
+                        <img
+                          src={sectionForm.imageUrl}
+                          alt="Section preview"
+                          className="max-w-full h-auto max-h-64 rounded-lg border border-cyan-500/30 shadow-lg"
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/placeholder-image.png';
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-all"
+                          title="Remove image"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={sectionForm.imageUrl || ""}
+                      onChange={(e) =>
+                        setSectionForm({ ...sectionForm, imageUrl: e.target.value })
+                      }
+                      className="flex-1 px-4 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white"
+                      placeholder="/images/chapter1-section1.jpg"
+                    />
+                    <label className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold rounded-lg cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                      {uploadingImage ? "Uploading..." : "🖼️ Upload"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            // Validate file size (max 10MB)
+                            if (file.size > 10 * 1024 * 1024) {
+                              alert('Image size must be less than 10MB');
+                              return;
+                            }
+                            handleFileUpload(file, 'image');
+                          }
+                        }}
+                        disabled={uploadingImage}
+                      />
+                    </label>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">Upload image file (JPG, PNG, GIF, WebP) or enter URL manually. Image will be displayed below the text content.</p>
                 </div>
 
                 <div>
