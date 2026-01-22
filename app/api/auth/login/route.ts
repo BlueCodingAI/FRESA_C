@@ -23,14 +23,18 @@ export async function POST(request: NextRequest) {
       )
     }
     
-    const { email, password } = body
+    const { email: emailRaw, password } = body
 
-    if (!email || !password) {
+    if (!emailRaw || !password) {
       return NextResponse.json(
         { error: 'Email and password are required' },
         { status: 400 }
       )
     }
+
+    // Normalize email to lowercase for consistency
+    const email = emailRaw.trim().toLowerCase()
+    console.log('[login] Normalized email:', email)
 
     // Find user with error handling
     let user;
@@ -38,6 +42,17 @@ export async function POST(request: NextRequest) {
       user = await prisma.user.findUnique({
         where: { email },
       })
+      
+      // If not found, try case-insensitive search as fallback (for existing users with mixed case)
+      if (!user) {
+        console.log('[login] User not found with normalized email, trying case-insensitive search...')
+        const allUsers = await prisma.user.findMany().catch(() => [])
+        user = allUsers.find(u => u.email.toLowerCase() === email) || null
+        if (user) {
+          console.log('[login] Found user with case-insensitive search:', user.email)
+          console.log('[login] ⚠️ WARNING: User email in database has different case:', user.email)
+        }
+      }
     } catch (dbError: any) {
       console.error('Database query error:', dbError)
       console.error('Error code:', dbError?.code)
@@ -61,19 +76,36 @@ export async function POST(request: NextRequest) {
     }
 
     if (!user) {
+      console.log('[login] User not found for email:', email)
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       )
     }
 
+    console.log('[login] User found:', user.id, user.email)
+    console.log('[login] Verifying password...')
+    
     // Verify password
     const isValid = await verifyPassword(password, user.password)
+    console.log('[login] Password valid:', isValid)
 
     if (!isValid) {
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
+      )
+    }
+
+    // Check if email is verified
+    if (!user.emailVerified) {
+      return NextResponse.json(
+        { 
+          error: 'Email not verified. Please check your email and click the verification link to activate your account.',
+          emailVerified: false,
+          email: user.email,
+        },
+        { status: 403 }
       )
     }
 

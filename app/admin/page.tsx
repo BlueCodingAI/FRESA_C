@@ -207,6 +207,20 @@ export default function AdminPage() {
               Manage eligibility quiz questions
             </p>
           </div>
+
+          {/* Students */}
+          <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-cyan-500/20 p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold text-white">Students</h2>
+              <Link
+                href="/admin/students"
+                className="px-3 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-cyan-500/50 transition-all duration-300 text-sm"
+              >
+                View
+              </Link>
+            </div>
+            <p className="text-gray-400 text-xs">View and delete student accounts</p>
+          </div>
         </div>
 
         {/* Chapters List */}

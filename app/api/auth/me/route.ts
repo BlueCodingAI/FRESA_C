@@ -45,6 +45,7 @@ export async function GET(request: NextRequest) {
           name: true,
           phone: true,
           role: true,
+          emailVerified: true,
         },
       })
 
@@ -53,6 +54,24 @@ export async function GET(request: NextRequest) {
       )
 
       user = await Promise.race([queryPromise, timeoutPromise]) as any
+      
+      // Check if email is verified
+      if (user && !user.emailVerified) {
+        console.log('[auth/me] ⚠️ User email not verified:', user.email)
+        console.log('[auth/me] User ID:', user.id)
+        console.log('[auth/me] emailVerified status:', user.emailVerified)
+        return NextResponse.json(
+          { error: 'Email not verified', emailVerified: false },
+          { status: 403 }
+        )
+      }
+      
+      console.log('[auth/me] ✅ User authenticated:', {
+        id: user?.id,
+        email: user?.email,
+        emailVerified: user?.emailVerified,
+        role: user?.role
+      })
     } catch (dbError: any) {
       console.error('Database query error:', dbError)
       console.error('Error code:', dbError?.code)

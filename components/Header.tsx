@@ -15,6 +15,12 @@ export default function Header() {
           Florida Real Estate Course
         </Link>
         <div className="flex items-center gap-3">
+          <Link
+            href="/contact"
+            className="hidden md:inline-flex px-3 py-2 rounded-lg border border-blue-500/30 text-blue-200 hover:bg-blue-500/10 transition-all text-sm"
+          >
+            Contact
+          </Link>
           <SearchBar />
           <UserMenu />
         </div>

@@ -9,7 +9,6 @@ export default function SignupPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
     name: "",
-    username: "",
     email: "",
     phone: "",
     password: "",
@@ -25,16 +24,6 @@ export default function SignupPage() {
     // Validation
     if (!formData.name.trim()) {
       setError("Full name is required");
-      return;
-    }
-
-    if (!formData.username.trim()) {
-      setError("Username is required");
-      return;
-    }
-
-    if (formData.username.length < 3) {
-      setError("Username must be at least 3 characters");
       return;
     }
 
@@ -58,7 +47,6 @@ export default function SignupPage() {
         },
         body: JSON.stringify({
           name: formData.name,
-          username: formData.username,
           email: formData.email,
           phone: formData.phone || undefined,
           password: formData.password,
@@ -77,23 +65,8 @@ export default function SignupPage() {
         throw new Error(data.error || "Signup failed");
       }
 
-      // Store token in cookie
-      document.cookie = `auth-token=${data.token}; path=/; max-age=${7 * 24 * 60 * 60}`;
-
-      // Check if there's a redirect destination
-      const redirectTo = sessionStorage.getItem("redirectAfterLogin");
-      if (redirectTo) {
-        sessionStorage.removeItem("redirectAfterLogin");
-        router.push(redirectTo);
-        return;
-      }
-
-      // Redirect based on role
-      if (["Admin", "Developer", "Editor"].includes(data.user.role)) {
-        router.push("/admin");
-      } else {
-        router.push("/");
-      }
+      // Redirect to success page with email for display
+      router.push(`/signup-success?email=${encodeURIComponent(formData.email)}`);
     } catch (err: any) {
       setError(err.message || "Failed to create account");
     } finally {
@@ -135,23 +108,6 @@ export default function SignupPage() {
                   className="w-full px-4 py-3 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
                   placeholder="John Doe"
                 />
-              </div>
-
-              <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
-                  Username <span className="text-red-400">*</span>
-                </label>
-                <input
-                  id="username"
-                  type="text"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  required
-                  minLength={3}
-                  className="w-full px-4 py-3 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
-                  placeholder="johndoe"
-                />
-                <p className="text-xs text-gray-500 mt-1">At least 3 characters</p>
               </div>
 
               <div>

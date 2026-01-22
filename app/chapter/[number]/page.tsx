@@ -334,6 +334,16 @@ export default function ChapterPage() {
       setQuizScore({ score, total });
       setShowRegistrationPrompt(true);
     } else {
+      // Send admin notification email (best-effort)
+      fetch("/api/quiz/complete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ chapterNumber, score, total }),
+        credentials: "include",
+      }).catch(() => {});
       router.push(`/congratulations?chapter=${chapterNumber}`);
     }
   };

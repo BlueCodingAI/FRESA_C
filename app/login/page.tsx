@@ -35,6 +35,12 @@ export default function LoginPage() {
       }
 
       if (!response.ok) {
+        // Check if email is not verified
+        if (response.status === 403 && data.emailVerified === false) {
+          // Redirect to unverified page with email
+          router.push(`/unverified?email=${encodeURIComponent(data.email || email)}`);
+          return;
+        }
         throw new Error(data.error || "Login failed");
       }
 
@@ -136,6 +142,14 @@ export default function LoginPage() {
                   className="w-full px-4 py-3 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all"
                   placeholder="••••••••"
                 />
+                <div className="mt-2 text-right">
+                  <Link
+                    href="/forgot-password"
+                    className="text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+                  >
+                    Forgot password?
+                  </Link>
+                </div>
               </div>
 
               <button
