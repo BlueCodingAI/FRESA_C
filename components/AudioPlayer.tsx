@@ -33,6 +33,153 @@ interface AudioPlayerProps {
   onHighlightedWord?: (word: string, wordIndex: number) => void; // Callback when word is highlighted
 }
 
+// Component to render HTML content with word highlighting
+function HTMLContentWithHighlighting({
+  html,
+  words,
+  highlightedIndex,
+  getWordIndexForHighlight,
+  plainText,
+}: {
+  html: string;
+  words: WordTimestamp[];
+  highlightedIndex: number | null;
+  getWordIndexForHighlight: (displayWordIndex: number) => number | null;
+  plainText: string;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const wordsRef = useRef<HTMLSpanElement[]>([]);
+
+  // Create displayWords array exactly as the main component does
+  const displayWords = useMemo(() => plainText.split(/\s+/).filter(word => word.length > 0), [plainText]);
+
+  // Initial render: parse HTML and wrap words in spans
+  // This ensures word indices match exactly with displayWords array
+  useEffect(() => {
+    if (!containerRef.current || typeof document === 'undefined') return;
+
+    const container = containerRef.current;
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = html;
+
+    // Get all text nodes in document order
+    const textNodes: Text[] = [];
+    const walker = document.createTreeWalker(
+      tempDiv,
+      NodeFilter.SHOW_TEXT,
+      null
+    );
+
+    let node;
+    while (node = walker.nextNode()) {
+      textNodes.push(node as Text);
+    }
+
+    // Process text nodes sequentially and wrap words
+    // Match each word found in HTML with displayWords by position
+    let displayWordIndex = 0;
+    wordsRef.current = new Array(displayWords.length).fill(null);
+
+    textNodes.forEach((textNode) => {
+      const text = textNode.textContent || '';
+      // Split by whitespace, preserving spaces
+      const segments = text.split(/(\s+)/);
+      const fragment = document.createDocumentFragment();
+
+      segments.forEach((segment) => {
+        const trimmed = segment.trim();
+        const isWord = trimmed.length > 0 && !/^\s+$/.test(segment);
+        
+        if (isWord && displayWordIndex < displayWords.length) {
+          // Create span for this word at displayWordIndex
+          const span = document.createElement('span');
+          span.textContent = segment;
+          span.className = 'inline';
+          span.setAttribute('data-word-index', displayWordIndex.toString());
+          
+          // Store ref - this ensures wordsRef[displayWordIndex] = span for displayWords[displayWordIndex]
+          wordsRef.current[displayWordIndex] = span;
+
+          fragment.appendChild(span);
+          displayWordIndex++;
+        } else {
+          // Space or non-word - preserve as text node
+          fragment.appendChild(document.createTextNode(segment));
+        }
+      });
+
+      // Replace the original text node with our fragment containing wrapped words
+      if (textNode.parentNode) {
+        textNode.parentNode.replaceChild(fragment, textNode);
+      }
+    });
+
+    // Update container with processed HTML
+    container.innerHTML = '';
+    container.appendChild(tempDiv);
+  }, [html, plainText, displayWords]);
+
+  // Update highlighting when highlightedIndex changes
+  useEffect(() => {
+    if (!containerRef.current || typeof document === 'undefined') return;
+
+    // Remove all previous highlights
+    wordsRef.current.forEach((span) => {
+      if (span) {
+        span.style.background = '';
+        span.style.backgroundSize = '';
+        span.style.backgroundPosition = '';
+        span.style.backgroundRepeat = '';
+        span.style.color = '';
+        span.style.borderRadius = '';
+        span.style.textShadow = '';
+        span.style.transition = '';
+      }
+    });
+
+    // Apply highlight to current word
+    // highlightedIndex is the timestamp index, we need to find which display word corresponds to it
+    if (highlightedIndex !== null && words.length > 0) {
+      // Find all display words that map to this timestamp index
+      wordsRef.current.forEach((span, displayWordIndex) => {
+        const timestampIndex = getWordIndexForHighlight(displayWordIndex);
+        const isHighlighted = timestampIndex !== null && highlightedIndex === timestampIndex;
+
+        if (isHighlighted && span) {
+          span.style.background = 'linear-gradient(120deg, rgba(59, 130, 246, 0.35) 0%, rgba(59, 130, 246, 0.55) 100%)';
+          span.style.backgroundSize = '100% 85%';
+          span.style.backgroundPosition = 'center';
+          span.style.backgroundRepeat = 'no-repeat';
+          span.style.color = '#fef08a';
+          span.style.borderRadius = '3px';
+          span.style.textShadow = '0 0 10px rgba(251, 191, 36, 0.7), 0 0 15px rgba(59, 130, 246, 0.5)';
+          span.style.transition = 'background 0.08s ease-out, color 0.08s ease-out, text-shadow 0.08s ease-out';
+
+          // Scroll to first highlighted word
+          if (displayWordIndex === 0 || wordsRef.current[displayWordIndex - 1]?.style.background === '') {
+            span.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+            });
+          }
+        }
+      });
+    }
+  }, [highlightedIndex, words, getWordIndexForHighlight]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="space-y-4 break-words overflow-wrap-anywhere prose prose-invert max-w-none"
+      style={{
+        wordWrap: "break-word",
+        overflowWrap: "break-word",
+        whiteSpace: "normal",
+      }}
+    />
+  );
+}
+
 export default function AudioPlayer({
   text,
   audioUrl,
@@ -474,15 +621,13 @@ export default function AudioPlayer({
       {!hideText && (
         <div className="text-white text-base md:text-lg leading-relaxed mb-6">
           {isHTML ? (
-            // Render HTML content directly
-            <div
-              className="space-y-4 break-words overflow-wrap-anywhere prose prose-invert max-w-none"
-              style={{
-                wordWrap: "break-word",
-                overflowWrap: "break-word",
-                whiteSpace: "normal",
-              }}
-              dangerouslySetInnerHTML={{ __html: text }}
+            // Render HTML content with highlighting support
+            <HTMLContentWithHighlighting
+              html={text}
+              words={words}
+              highlightedIndex={highlightedIndex}
+              getWordIndexForHighlight={getWordIndexForHighlight}
+              plainText={plainText}
             />
           ) : (
             // Render plain text with word-by-word highlighting
