@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import StarsBackground from "@/components/StarsBackground";
+import RichTextEditor from "@/components/RichTextEditor";
 
 interface Section {
   id: string;
@@ -277,10 +278,32 @@ export default function ChapterEditPage() {
     }
   };
 
+  // Helper function to strip HTML and get plain text for audio generation
+  const stripHTML = (html: string): string => {
+    if (typeof document === 'undefined') {
+      // Server-side: simple regex strip
+      const tmp = html
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .trim();
+      return tmp;
+    }
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return (tmp.textContent || tmp.innerText || '').trim();
+  };
+
   // Helper function to build request body with TTS settings
   const buildAudioRequest = (text: string, context: 'section' | 'quiz' | 'introduction' = 'section', voiceId?: string) => {
+    // Strip HTML from text before sending to audio generation API
+    const plainText = stripHTML(text);
     return {
-      text,
+      text: plainText,
       type: 'both',
       context,
       voiceId,
@@ -1754,11 +1777,10 @@ export default function ChapterEditPage() {
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Description
                 </label>
-                <textarea
-                  value={chapterForm.description}
-                  onChange={(e) => setChapterForm({ ...chapterForm, description: e.target.value })}
+                <RichTextEditor
+                  value={chapterForm.description || ""}
+                  onChange={(value) => setChapterForm({ ...chapterForm, description: value })}
                   rows={3}
-                  className="w-full px-4 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
                   placeholder="Enter chapter description (optional)"
                 />
               </div>
@@ -2079,13 +2101,12 @@ export default function ChapterEditPage() {
                       </button>
                     </div>
                   </div>
-                  <textarea
+                  <RichTextEditor
                     value={sectionForm.text || ""}
-                    onChange={(e) =>
-                      setSectionForm({ ...sectionForm, text: e.target.value })
+                    onChange={(value) =>
+                      setSectionForm({ ...sectionForm, text: value })
                     }
                     rows={8}
-                    className="w-full px-4 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white"
                     placeholder="Enter section text content..."
                   />
                   <p className="text-xs text-gray-400 mt-1">
@@ -2234,13 +2255,12 @@ export default function ChapterEditPage() {
                       </button>
                     </div>
                   </div>
-                  <textarea
+                  <RichTextEditor
                     value={questionForm.question || ""}
-                    onChange={(e) =>
-                      setQuestionForm({ ...questionForm, question: e.target.value })
+                    onChange={(value) =>
+                      setQuestionForm({ ...questionForm, question: value })
                     }
                     rows={3}
-                    className="w-full px-4 py-2 bg-[#0a0e27]/50 border border-purple-500/30 rounded-lg text-white"
                     placeholder="Enter the question text..."
                   />
                   {/* Progress indicator for question */}
@@ -2439,20 +2459,19 @@ export default function ChapterEditPage() {
                       {generatingCorrectExplanationAudio ? "🔄 Generating..." : "🎙️ Generate Audio"}
                     </button>
                   </div>
-                  <textarea
+                  <RichTextEditor
                     value={questionForm.explanation?.correct || ""}
-                    onChange={(e) =>
+                    onChange={(value) =>
                       setQuestionForm({
                         ...questionForm,
                         explanation: {
                           ...questionForm.explanation,
-                          correct: e.target.value,
+                          correct: value,
                           incorrect: questionForm.explanation?.incorrect || [],
                         },
                       })
                     }
                     rows={2}
-                    className="w-full px-4 py-2 bg-[#0a0e27]/50 border border-purple-500/30 rounded-lg text-white"
                     placeholder="Explanation for correct answer..."
                   />
                   {/* Progress indicator for correct explanation */}
@@ -2516,15 +2535,15 @@ export default function ChapterEditPage() {
                             <span className="text-xs text-gray-400 italic">"{option}"</span>
                           </div>
                           <div className="flex gap-2 items-start">
-                            <textarea
+                            <RichTextEditor
                               value={incorrectText}
-                              onChange={(e) => {
+                              onChange={(value) => {
                                 const newIncorrect = [...(questionForm.explanation?.incorrect || [])];
                                 // Ensure array is long enough
                                 while (newIncorrect.length <= optionIdx) {
                                   newIncorrect.push("");
                                 }
-                                newIncorrect[optionIdx] = e.target.value;
+                                newIncorrect[optionIdx] = value;
                                 setQuestionForm({
                                   ...questionForm,
                                   explanation: {
@@ -2535,7 +2554,6 @@ export default function ChapterEditPage() {
                                 });
                               }}
                               rows={2}
-                              className="flex-1 px-4 py-2 bg-[#0a0e27]/50 border border-red-500/30 rounded-lg text-white"
                               placeholder={`Why is option ${optionIdx + 1} incorrect?`}
                             />
                             <button

@@ -65,44 +65,94 @@ export default function AudioPlayer({
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const speedMenuRef = useRef<HTMLDivElement>(null);
 
+  // Helper function to strip HTML and get plain text
+  const stripHTML = (html: string): string => {
+    if (typeof document === 'undefined') {
+      // Server-side: simple regex strip
+      return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
+    }
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return tmp.textContent || tmp.innerText || '';
+  };
+
+  // Check if text contains HTML
+  const isHTML = useMemo(() => /<[^>]+>/.test(text), [text]);
+  
+  // Get plain text for word matching (strip HTML if present)
+  const plainText = useMemo(() => isHTML ? stripHTML(text) : text, [text, isHTML]);
+  
   // Split text into words for highlighting - memoize to prevent recalculation
-  const displayWords = useMemo(() => text.split(/\s+/).filter(word => word.length > 0), [text]);
+  const displayWords = useMemo(() => plainText.split(/\s+/).filter(word => word.length > 0), [plainText]);
   
   // Parse text into structured blocks for display (numbered lists on separate lines)
   const textBlocks = useMemo(() => {
-    const blocks: Array<{ text: string; isNumberedItem: boolean; wordStartIndex: number }> = [];
+    const blocks: Array<{ text: string; html?: string; isNumberedItem: boolean; wordStartIndex: number }> = [];
     
+    // Use plain text for parsing structure
     const numberedListPattern = /(?<=\s|^)\d+\.\s(?=[A-Z]|$)/;
-    const hasNumberedList = numberedListPattern.test(text);
+    const hasNumberedList = numberedListPattern.test(plainText);
     
     if (!hasNumberedList) {
       return [{
-        text: text.trim(),
+        text: plainText.trim(),
+        html: isHTML ? text.trim() : undefined,
         isNumberedItem: false,
         wordStartIndex: 0
       }];
     }
     
-    const parts = text.split(/(?=\s\d+\.\s(?=[A-Z])|^\d+\.\s(?=[A-Z]))/);
-    
-    let wordIndex = 0;
-    for (const part of parts) {
-      const trimmed = part.trim();
-      if (!trimmed) continue;
+    // For HTML content, we need to parse differently
+    if (isHTML) {
+      // Split HTML while preserving structure - use plain text for splitting
+      const parts = plainText.split(/(?=\s\d+\.\s(?=[A-Z])|^\d+\.\s(?=[A-Z]))/);
       
-      const isNumberedItem = /^\d+\.\s/.test(trimmed);
-      blocks.push({
-        text: trimmed,
-        isNumberedItem,
-        wordStartIndex: wordIndex,
-      });
+      let wordIndex = 0;
+      let htmlOffset = 0;
       
-      const partWords = trimmed.split(/\s+/).filter(w => w.length > 0);
-      wordIndex += partWords.length;
+      for (const part of parts) {
+        const trimmed = part.trim();
+        if (!trimmed) continue;
+        
+        const isNumberedItem = /^\d+\.\s/.test(trimmed);
+        
+        // Find corresponding HTML segment (approximate)
+        const htmlSegment = text.substring(htmlOffset, Math.min(htmlOffset + trimmed.length * 2, text.length));
+        htmlOffset += htmlSegment.length;
+        
+        blocks.push({
+          text: trimmed,
+          html: htmlSegment.trim(),
+          isNumberedItem,
+          wordStartIndex: wordIndex,
+        });
+        
+        const partWords = trimmed.split(/\s+/).filter(w => w.length > 0);
+        wordIndex += partWords.length;
+      }
+    } else {
+      // Plain text parsing (original logic)
+      const parts = plainText.split(/(?=\s\d+\.\s(?=[A-Z])|^\d+\.\s(?=[A-Z]))/);
+      
+      let wordIndex = 0;
+      for (const part of parts) {
+        const trimmed = part.trim();
+        if (!trimmed) continue;
+        
+        const isNumberedItem = /^\d+\.\s/.test(trimmed);
+        blocks.push({
+          text: trimmed,
+          isNumberedItem,
+          wordStartIndex: wordIndex,
+        });
+        
+        const partWords = trimmed.split(/\s+/).filter(w => w.length > 0);
+        wordIndex += partWords.length;
+      }
     }
     
     return blocks;
-  }, [text]);
+  }, [plainText, text, isHTML]);
 
   // Load timestamps from URL
   useEffect(() => {
@@ -423,86 +473,100 @@ export default function AudioPlayer({
       {/* Text with highlighting - structured display with numbered items on separate lines */}
       {!hideText && (
         <div className="text-white text-base md:text-lg leading-relaxed mb-6">
-          <div className="space-y-4 break-words overflow-wrap-anywhere">
-            {textBlocks.map((block, blockIndex) => {
-              // Split this block's text into words with spaces for highlighting
-              const blockWordsWithSpaces = block.text.split(/(\s+)/);
-              let blockWordIndex = block.wordStartIndex;
-              
-              return (
-                <div
-                  key={blockIndex}
-                  className={block.isNumberedItem ? "mt-3 mb-2 pl-4" : blockIndex === 0 ? "" : "mt-2"}
-                  style={{
-                    wordWrap: "break-word",
-                    overflowWrap: "break-word",
-                    whiteSpace: "normal",
-                  }}
-                >
-                {blockWordsWithSpaces.map((segment, segmentIndex) => {
-                  const isWord = segment.trim().length > 0 && !/^\s+$/.test(segment);
-                  const globalWordIndex = isWord ? blockWordIndex : null;
-                  
-                  if (isWord) {
-                    blockWordIndex++;
-                  }
-                  
-                  // Check if this word should be highlighted
-                  const timestampIndex = globalWordIndex !== null ? getWordIndexForHighlight(globalWordIndex) : null;
-                  const isHighlighted = timestampIndex !== null && highlightedIndex === timestampIndex;
-                  const isSpace = !isWord;
-                  
-                  const trimmedSegment = segment.trim();
-                  const isNumberedItem = /^\d+\./.test(trimmedSegment);
-                  
-                  return (
-                    <span
-                      key={`${blockIndex}-${segmentIndex}`}
-                      ref={(el) => {
-                        if (el && isWord && globalWordIndex !== null) {
-                          wordsRef.current[globalWordIndex] = el;
-                        }
-                      }}
-                      className="inline"
-                      style={{
-                        padding: "0",
-                        margin: "0",
-                        display: "inline",
-                        whiteSpace: "normal",
-                        wordWrap: "break-word",
-                        overflowWrap: "break-word",
-                        lineHeight: "inherit",
-                        fontSize: "inherit",
-                        fontFamily: "inherit",
-                        fontWeight: "600",
-                        ...(isHighlighted ? {
-                          background: "linear-gradient(120deg, rgba(59, 130, 246, 0.35) 0%, rgba(59, 130, 246, 0.55) 100%)",
-                          backgroundSize: "100% 85%",
-                          backgroundPosition: "center",
-                          backgroundRepeat: "no-repeat",
-                          color: "#fef08a",
-                          borderRadius: "3px",
-                          textShadow: "0 0 10px rgba(251, 191, 36, 0.7), 0 0 15px rgba(59, 130, 246, 0.5)",
-                          transition: "background 0.08s ease-out, color 0.08s ease-out, text-shadow 0.08s ease-out",
-                        } : highlightQuery && segment.toLowerCase().includes(highlightQuery.toLowerCase()) ? {
-                          backgroundColor: "rgba(250, 204, 21, 0.4)",
-                          color: "#fef08a",
-                          borderRadius: "3px",
+          {isHTML ? (
+            // Render HTML content directly
+            <div
+              className="space-y-4 break-words overflow-wrap-anywhere prose prose-invert max-w-none"
+              style={{
+                wordWrap: "break-word",
+                overflowWrap: "break-word",
+                whiteSpace: "normal",
+              }}
+              dangerouslySetInnerHTML={{ __html: text }}
+            />
+          ) : (
+            // Render plain text with word-by-word highlighting
+            <div className="space-y-4 break-words overflow-wrap-anywhere">
+              {textBlocks.map((block, blockIndex) => {
+                // Split this block's text into words with spaces for highlighting
+                const blockWordsWithSpaces = block.text.split(/(\s+)/);
+                let blockWordIndex = block.wordStartIndex;
+                
+                return (
+                  <div
+                    key={blockIndex}
+                    className={block.isNumberedItem ? "mt-3 mb-2 pl-4" : blockIndex === 0 ? "" : "mt-2"}
+                    style={{
+                      wordWrap: "break-word",
+                      overflowWrap: "break-word",
+                      whiteSpace: "normal",
+                    }}
+                  >
+                  {blockWordsWithSpaces.map((segment, segmentIndex) => {
+                    const isWord = segment.trim().length > 0 && !/^\s+$/.test(segment);
+                    const globalWordIndex = isWord ? blockWordIndex : null;
+                    
+                    if (isWord) {
+                      blockWordIndex++;
+                    }
+                    
+                    // Check if this word should be highlighted
+                    const timestampIndex = globalWordIndex !== null ? getWordIndexForHighlight(globalWordIndex) : null;
+                    const isHighlighted = timestampIndex !== null && highlightedIndex === timestampIndex;
+                    const isSpace = !isWord;
+                    
+                    const trimmedSegment = segment.trim();
+                    const isNumberedItem = /^\d+\./.test(trimmedSegment);
+                    
+                    return (
+                      <span
+                        key={`${blockIndex}-${segmentIndex}`}
+                        ref={(el) => {
+                          if (el && isWord && globalWordIndex !== null) {
+                            wordsRef.current[globalWordIndex] = el;
+                          }
+                        }}
+                        className="inline"
+                        style={{
+                          padding: "0",
+                          margin: "0",
+                          display: "inline",
+                          whiteSpace: "normal",
+                          wordWrap: "break-word",
+                          overflowWrap: "break-word",
+                          lineHeight: "inherit",
+                          fontSize: "inherit",
+                          fontFamily: "inherit",
                           fontWeight: "600",
-                        } : {
-                          color: isNumberedItem ? "#93c5fd" : "inherit",
-                          background: "transparent",
-                        }),
-                      }}
-                    >
-                      {segment}
-                    </span>
-                  );
-                })}
-              </div>
-            );
-          })}
-          </div>
+                          ...(isHighlighted ? {
+                            background: "linear-gradient(120deg, rgba(59, 130, 246, 0.35) 0%, rgba(59, 130, 246, 0.55) 100%)",
+                            backgroundSize: "100% 85%",
+                            backgroundPosition: "center",
+                            backgroundRepeat: "no-repeat",
+                            color: "#fef08a",
+                            borderRadius: "3px",
+                            textShadow: "0 0 10px rgba(251, 191, 36, 0.7), 0 0 15px rgba(59, 130, 246, 0.5)",
+                            transition: "background 0.08s ease-out, color 0.08s ease-out, text-shadow 0.08s ease-out",
+                          } : highlightQuery && segment.toLowerCase().includes(highlightQuery.toLowerCase()) ? {
+                            backgroundColor: "rgba(250, 204, 21, 0.4)",
+                            color: "#fef08a",
+                            borderRadius: "3px",
+                            fontWeight: "600",
+                          } : {
+                            color: isNumberedItem ? "#93c5fd" : "inherit",
+                            background: "transparent",
+                          }),
+                        }}
+                      >
+                        {segment}
+                      </span>
+                    );
+                  })}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
 

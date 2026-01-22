@@ -440,9 +440,10 @@ export default function ChapterPage() {
               {chapterData ? `Chapter ${chapterData.number}: ${chapterData.title}` : `Chapter ${chapterNumber}: Loading...`}
             </p>
             {chapterData?.description && (
-              <p className="text-gray-300 text-base md:text-lg mt-2 max-w-3xl mx-auto">
-                {chapterData.description}
-              </p>
+              <p 
+                className="text-gray-300 text-base md:text-lg mt-2 max-w-3xl mx-auto"
+                dangerouslySetInnerHTML={{ __html: chapterData.description }}
+              />
             )}
             <div className="mt-4 text-sm text-gray-400">
               Section {currentIndex + 1} of {sections.length}

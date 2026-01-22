@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import MrListings from "./MrListings";
 import AudioPlayer from "./AudioPlayer";
-import { highlightText } from "@/lib/highlightText";
+import { highlightText, highlightTextHTML } from "@/lib/highlightText";
 
 export interface QuizQuestion {
   id: string;
@@ -588,9 +588,12 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
       <div className="bg-[#1e3a5f] border border-blue-500/30 rounded-2xl p-6 md:p-8 shadow-2xl mb-6">
         {/* Question Text - Clear and Prominent */}
         <div className="mb-6" ref={questionRef}>
-          <h2 className="text-xl md:text-2xl font-semibold text-white leading-relaxed">
-            {searchHighlight ? highlightText(currentQuestion.question, searchHighlight) : currentQuestion.question}
-          </h2>
+          <h2 
+            className="text-xl md:text-2xl font-semibold text-white leading-relaxed"
+            dangerouslySetInnerHTML={{ 
+              __html: searchHighlight ? highlightTextHTML(currentQuestion.question, searchHighlight) : currentQuestion.question 
+            }}
+          />
         </div>
 
         {/* Options */}
@@ -651,7 +654,9 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                       }
                     }}
                   >
-                    {searchHighlight ? highlightText(option, searchHighlight) : option}
+                    <span dangerouslySetInnerHTML={{ 
+                      __html: searchHighlight ? highlightTextHTML(option, searchHighlight) : option 
+                    }} />
                   </span>
                 </div>
               </button>
@@ -774,11 +779,14 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
             
             {/* Explanation Text with Highlighting Support */}
             <div className="mb-4" data-explanation-text ref={explanationRef}>
-              <p className="text-white text-base md:text-lg leading-relaxed">
-                {/* Store the plain text in a data attribute for exact matching */}
-                <span data-plain-text={getExplanationText()} style={{ display: 'none' }}></span>
-                {searchHighlight ? highlightText(getExplanationText(), searchHighlight) : getExplanationText()}
-              </p>
+              <p 
+                className="text-white text-base md:text-lg leading-relaxed"
+                dangerouslySetInnerHTML={{ 
+                  __html: searchHighlight ? highlightTextHTML(getExplanationText(), searchHighlight) : getExplanationText() 
+                }}
+              />
+              {/* Store the plain text in a data attribute for exact matching */}
+              <span data-plain-text={getExplanationText()} style={{ display: 'none' }}></span>
             </div>
             
             {/* Explanation Audio Player */}

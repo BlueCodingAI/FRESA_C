@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import StarsBackground from "@/components/StarsBackground";
+import RichTextEditor from "@/components/RichTextEditor";
 
 interface IntroductionData {
   id?: string;
@@ -245,13 +246,12 @@ export default function IntroductionEditPage() {
                   </button>
                 </div>
               </div>
-              <textarea
+              <RichTextEditor
                 value={introData.text}
-                onChange={(e) =>
-                  setIntroData({ ...introData, text: e.target.value })
+                onChange={(value) =>
+                  setIntroData({ ...introData, text: value })
                 }
                 rows={6}
-                className="w-full px-4 py-2 bg-[#0a0e27]/50 border border-purple-500/30 rounded-lg text-white"
                 placeholder="Enter introduction text..."
               />
               <p className="text-xs text-gray-400 mt-1">

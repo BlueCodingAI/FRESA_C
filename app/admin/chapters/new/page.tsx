@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import StarsBackground from "@/components/StarsBackground";
+import RichTextEditor from "@/components/RichTextEditor";
+
+// Disable static generation for this page
+export const dynamic = 'force-dynamic';
 
 export default function NewChapterPage() {
   const router = useRouter();
@@ -16,6 +20,9 @@ export default function NewChapterPage() {
   const [error, setError] = useState("");
 
   const getToken = () => {
+    if (typeof document === 'undefined') {
+      return null;
+    }
     return document.cookie
       .split("; ")
       .find((row) => row.startsWith("auth-token="))
@@ -116,13 +123,12 @@ export default function NewChapterPage() {
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Description (Optional)
               </label>
-              <textarea
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
+              <RichTextEditor
+                value={formData.description || ""}
+                onChange={(value) =>
+                  setFormData({ ...formData, description: value })
                 }
                 rows={4}
-                className="w-full px-4 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
                 placeholder="Brief description of the chapter..."
               />
             </div>
