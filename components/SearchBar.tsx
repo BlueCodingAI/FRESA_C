@@ -29,6 +29,8 @@ interface SearchResponse {
 
 export default function SearchBar() {
   const [isOpen, setIsOpen] = useState(false);
+  const [showRegistrationPrompt, setShowRegistrationPrompt] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [results, setResults] = useState<SearchResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,13 +45,42 @@ export default function SearchBar() {
     setMounted(true);
   }, []);
 
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("auth-token="))
+        ?.split("=")[1];
+
+      if (!token) {
+        setIsAuthenticated(false);
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+          credentials: "include",
+        });
+        setIsAuthenticated(response.ok);
+      } catch {
+        setIsAuthenticated(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
   // Manage body scroll when modal is open/closed
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen || showRegistrationPrompt) {
       // Prevent body scroll when modal is open
       document.body.style.overflow = 'hidden';
       // Focus input when search opens
-      setTimeout(() => inputRef.current?.focus(), 100);
+      if (isOpen) {
+        setTimeout(() => inputRef.current?.focus(), 100);
+      }
     } else {
       // Restore body scroll when modal is closed
       document.body.style.overflow = 'unset';
@@ -58,7 +89,7 @@ export default function SearchBar() {
     return () => {
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen]);
+  }, [isOpen, showRegistrationPrompt]);
 
   // Handle keyboard shortcuts
   useEffect(() => {
@@ -66,19 +97,48 @@ export default function SearchBar() {
       // Ctrl/Cmd + K to open search
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
-        setIsOpen(true);
+        handleSearchClick();
       }
-      // Escape to close search
-      if (e.key === 'Escape' && isOpen) {
-        setIsOpen(false);
-        setSearchQuery("");
-        setResults(null);
+      // Escape to close search or registration prompt
+      if (e.key === 'Escape') {
+        if (isOpen) {
+          setIsOpen(false);
+          setSearchQuery("");
+          setResults(null);
+        }
+        if (showRegistrationPrompt) {
+          setShowRegistrationPrompt(false);
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen]);
+  }, [isOpen, showRegistrationPrompt]);
+
+  const handleSearchClick = () => {
+    // Check if user is authenticated
+    if (isAuthenticated === false) {
+      setShowRegistrationPrompt(true);
+      return;
+    }
+    
+    // If authentication status is still being checked, wait a bit
+    if (isAuthenticated === null) {
+      // Double-check authentication
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("auth-token="))
+        ?.split("=")[1];
+      
+      if (!token) {
+        setShowRegistrationPrompt(true);
+        return;
+      }
+    }
+    
+    setIsOpen(true);
+  };
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) {
@@ -226,7 +286,7 @@ export default function SearchBar() {
     <div ref={searchRef} className="relative">
       {/* Search Button - Original Design */}
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={handleSearchClick}
         className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1f3a]/60 border border-cyan-500/30 rounded-lg hover:bg-cyan-500/10 transition-all text-gray-300 hover:text-white"
         aria-label="Search"
       >
@@ -379,6 +439,100 @@ export default function SearchBar() {
                     <p className="text-sm text-gray-500">Search across chapters, sections, and quiz questions</p>
                   </div>
                 ) : null}
+              </div>
+            </div>
+          </div>
+        </>,
+        document.body
+      ) : null}
+
+      {/* Registration Prompt Modal */}
+      {mounted && showRegistrationPrompt ? createPortal(
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/70 backdrop-blur-md z-[100]" 
+            onClick={() => setShowRegistrationPrompt(false)}
+            style={{ animation: 'fadeInOverlay 0.2s ease-out' }}
+          />
+          {/* Modal Content */}
+          <div 
+            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md z-[101] px-4"
+            style={{ 
+              animation: 'slideInScale 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="bg-[#1a1f3a]/95 backdrop-blur-lg border-2 border-cyan-500/50 rounded-xl shadow-2xl overflow-hidden relative">
+              <div className="p-6 md:p-8">
+                {/* Close Button */}
+                <button
+                  onClick={() => setShowRegistrationPrompt(false)}
+                  className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors z-10"
+                  aria-label="Close"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+
+                {/* Icon */}
+                <div className="w-16 h-16 bg-cyan-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+
+                {/* Title */}
+                <h2 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 mb-3 text-center">
+                  Registration Required
+                </h2>
+
+                {/* Message */}
+                <p className="text-gray-300 text-center mb-6">
+                  Please register to use the search feature and access all course content.
+                </p>
+
+                {/* Benefits */}
+                <div className="bg-[#0a0e27]/50 border border-cyan-500/20 rounded-lg p-4 mb-6">
+                  <p className="text-sm font-medium text-gray-300 mb-3">Benefits of registering:</p>
+                  <ul className="text-sm text-gray-400 space-y-2">
+                    <li className="flex items-start gap-2">
+                      <span className="text-cyan-400 mt-0.5">✓</span>
+                      <span>Search across all chapters and content</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-cyan-400 mt-0.5">✓</span>
+                      <span>Save your progress automatically</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-cyan-400 mt-0.5">✓</span>
+                      <span>Access all course materials</span>
+                    </li>
+                  </ul>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex flex-col gap-3">
+                  <button
+                    onClick={() => {
+                      setShowRegistrationPrompt(false);
+                      router.push("/signup");
+                    }}
+                    className="w-full py-3 px-4 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-cyan-500/50 transition-all duration-300"
+                  >
+                    Register Now
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowRegistrationPrompt(false);
+                      router.push("/login");
+                    }}
+                    className="w-full py-3 px-4 bg-[#1a1f3a]/50 border border-cyan-500/30 rounded-lg text-cyan-400 hover:bg-cyan-500/10 transition-all"
+                  >
+                    Already have an account? Login
+                  </button>
+                </div>
               </div>
             </div>
           </div>
