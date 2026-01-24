@@ -147,27 +147,27 @@ export default function AdminPage() {
     <div className="min-h-screen bg-gradient-to-b from-[#0a0e27] via-[#1a1f3a] to-[#0a0e27] relative overflow-hidden">
       <StarsBackground />
       
-      <div className="relative z-10 container mx-auto px-4 py-8">
+      <div className="relative z-10 container mx-auto px-4 py-4 md:py-8">
         {/* Header */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-6 md:mb-8 gap-4">
           <div>
-            <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 mb-2">
+            <h1 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 mb-2">
               Admin Panel
             </h1>
-            <p className="text-gray-400">
+            <p className="text-sm md:text-base text-gray-400">
               Welcome, {user?.name || user?.email} ({user?.role})
             </p>
           </div>
-          <div className="flex gap-4">
+          <div className="flex flex-col sm:flex-row gap-2 md:gap-4">
             <Link
               href="/"
-              className="px-4 py-2 bg-[#1a1f3a]/80 border border-cyan-500/30 rounded-lg text-cyan-400 hover:bg-cyan-500/10 transition-all"
+              className="px-4 py-2 bg-[#1a1f3a]/80 border border-cyan-500/30 rounded-lg text-cyan-400 hover:bg-cyan-500/10 transition-all text-sm md:text-base text-center"
             >
               View Site
             </Link>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/30 transition-all"
+              className="px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/30 transition-all text-sm md:text-base"
             >
               Logout
             </button>
@@ -175,66 +175,66 @@ export default function AdminPage() {
         </div>
 
         {/* Special Pages */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6">
           {/* Introduction Page Editor */}
-          <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-purple-500/20 p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-white">Introduction Page</h2>
+          <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-purple-500/20 p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 md:mb-4 gap-3">
+              <h2 className="text-lg md:text-xl font-bold text-white">Introduction Page</h2>
               <Link
                 href="/admin/introduction"
-                className="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-purple-500/50 transition-all duration-300 text-sm"
+                className="px-3 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-purple-500/50 transition-all duration-300 text-sm w-full sm:w-auto text-center"
               >
                 Edit
               </Link>
             </div>
-            <p className="text-gray-400 text-xs">
+            <p className="text-gray-400 text-xs md:text-sm">
               Edit introduction content, text, and audio
             </p>
           </div>
 
           {/* Eligibility Quiz Editor */}
-          <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-orange-500/20 p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-white">Eligibility Quiz</h2>
+          <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-orange-500/20 p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 md:mb-4 gap-3">
+              <h2 className="text-lg md:text-xl font-bold text-white">Eligibility Quiz</h2>
               <Link
                 href="/admin/eligibility"
-                className="px-3 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-orange-500/50 transition-all duration-300 text-sm"
+                className="px-3 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-orange-500/50 transition-all duration-300 text-sm w-full sm:w-auto text-center"
               >
                 Edit
               </Link>
             </div>
-            <p className="text-gray-400 text-xs">
+            <p className="text-gray-400 text-xs md:text-sm">
               Manage eligibility quiz questions
             </p>
           </div>
 
           {/* Students */}
-          <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-cyan-500/20 p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-white">Students</h2>
+          <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-cyan-500/20 p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 md:mb-4 gap-3">
+              <h2 className="text-lg md:text-xl font-bold text-white">Students</h2>
               <Link
                 href="/admin/students"
-                className="px-3 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-cyan-500/50 transition-all duration-300 text-sm"
+                className="px-3 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-cyan-500/50 transition-all duration-300 text-sm w-full sm:w-auto text-center"
               >
                 View
               </Link>
             </div>
-            <p className="text-gray-400 text-xs">View and delete student accounts</p>
+            <p className="text-gray-400 text-xs md:text-sm">View and delete student accounts</p>
           </div>
         </div>
 
         {/* Chapters List */}
-        <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-cyan-500/20 p-6">
-          <div className="flex justify-between items-center mb-6">
+        <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-cyan-500/20 p-4 md:p-6">
+          <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 md:mb-6 gap-4">
             <div>
-              <h2 className="text-2xl font-bold text-white">Chapters & Content</h2>
-              <p className="text-gray-400 text-sm mt-1">
+              <h2 className="text-xl md:text-2xl font-bold text-white">Chapters & Content</h2>
+              <p className="text-gray-400 text-xs md:text-sm mt-1">
                 All chapters starting from Chapter 1 (Introduction is managed separately above)
               </p>
             </div>
             <Link
               href="/admin/chapters/new"
-              className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-cyan-500/50 transition-all duration-300"
+              className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-cyan-500/50 transition-all duration-300 text-sm md:text-base w-full md:w-auto text-center"
             >
               + New Chapter
             </Link>
@@ -256,19 +256,19 @@ export default function AdminPage() {
               chapters.map((chapter) => (
                 <div
                   key={chapter.id}
-                  className="p-4 bg-[#0a0e27]/50 border border-cyan-500/20 rounded-lg hover:border-cyan-500/50 hover:bg-[#0a0e27]/70 transition-all"
+                  className="p-3 md:p-4 bg-[#0a0e27]/50 border border-cyan-500/20 rounded-lg hover:border-cyan-500/50 hover:bg-[#0a0e27]/70 transition-all"
                 >
-                  <div className="flex justify-between items-center">
-                    <div className="flex-1">
-                      <h3 className="text-xl font-semibold text-white mb-1">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 md:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg md:text-xl font-semibold text-white mb-1 break-words">
                         Chapter {chapter.number}: {chapter.title || "Untitled Chapter"}
                       </h3>
                       {chapter.description ? (
-                        <p className="text-gray-400 text-sm mb-2">{chapter.description}</p>
+                        <p className="text-gray-400 text-xs md:text-sm mb-2 line-clamp-2">{chapter.description}</p>
                       ) : (
-                        <p className="text-gray-500 text-sm mb-2 italic">No description set</p>
+                        <p className="text-gray-500 text-xs md:text-sm mb-2 italic">No description set</p>
                       )}
-                      <div className="flex gap-4 text-cyan-400 text-sm">
+                      <div className="flex flex-wrap gap-3 md:gap-4 text-cyan-400 text-xs md:text-sm">
                         <span>{chapter._count.sections} section{chapter._count.sections !== 1 ? "s" : ""}</span>
                         <Link
                           href={`/chapter/${chapter.number}`}
@@ -280,10 +280,10 @@ export default function AdminPage() {
                         </Link>
                       </div>
                     </div>
-                    <div className="flex gap-2 ml-4">
+                    <div className="flex flex-col sm:flex-row gap-2 md:ml-4">
                       <Link
                         href={`/admin/chapters/${chapter.id}`}
-                        className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg transition-all text-sm"
+                        className="px-3 md:px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg transition-all text-xs md:text-sm text-center"
                       >
                         Edit All Content
                       </Link>
@@ -318,7 +318,7 @@ export default function AdminPage() {
                             }
                           }
                         }}
-                        className="px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/30 transition-all text-sm"
+                        className="px-3 md:px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/30 transition-all text-xs md:text-sm"
                       >
                         Delete
                       </button>

@@ -143,22 +143,22 @@ export default function EligibilityEditPage() {
     <div className="min-h-screen bg-gradient-to-b from-[#0a0e27] via-[#1a1f3a] to-[#0a0e27] relative overflow-hidden">
       <StarsBackground />
       
-      <div className="relative z-10 container mx-auto px-4 py-8">
-        <div className="mb-6">
+      <div className="relative z-10 container mx-auto px-4 py-4 md:py-8">
+        <div className="mb-4 md:mb-6">
           <Link
             href="/admin"
-            className="text-cyan-400 hover:text-cyan-300 mb-4 inline-block"
+            className="text-cyan-400 hover:text-cyan-300 mb-3 md:mb-4 inline-block text-sm md:text-base"
           >
             ← Back to Admin Panel
           </Link>
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-red-400 to-orange-400 mb-2">
+          <h1 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-red-400 to-orange-400 mb-2">
             Edit Eligibility Quiz
           </h1>
         </div>
 
-        <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-orange-500/20 p-6 mb-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Eligibility Quiz Questions</h2>
+        <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-orange-500/20 p-4 md:p-6 mb-4 md:mb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 md:mb-6 gap-4">
+            <h2 className="text-xl md:text-2xl font-bold text-white">Eligibility Quiz Questions</h2>
             <button
               onClick={() => {
                 setShowQuestionForm(true);
@@ -172,7 +172,7 @@ export default function EligibilityEditPage() {
                   order: quizQuestions.length,
                 });
               }}
-              className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-orange-500/50 transition-all duration-300"
+              className="px-4 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-orange-500/50 transition-all duration-300 text-sm md:text-base w-full sm:w-auto text-center"
             >
               + New Question
             </button>
@@ -188,18 +188,18 @@ export default function EligibilityEditPage() {
               quizQuestions.map((question) => (
                 <div
                   key={question.id}
-                  className="p-4 bg-[#0a0e27]/50 border border-orange-500/20 rounded-lg"
+                  className="p-3 md:p-4 bg-[#0a0e27]/50 border border-orange-500/20 rounded-lg"
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-white mb-2">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3 md:gap-4">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base md:text-lg font-semibold text-white mb-2 break-words">
                         {question.question}
                       </h3>
                       <div className="space-y-1 mb-2">
                         {question.options.map((option, idx) => (
                           <div
                             key={idx}
-                            className={`text-sm ${
+                            className={`text-xs md:text-sm ${
                               idx === question.correctAnswer
                                 ? "text-green-400 font-semibold"
                                 : "text-gray-400"
@@ -214,16 +214,16 @@ export default function EligibilityEditPage() {
                         Correct Answer: Option {question.correctAnswer + 1} | Order: {question.order}
                       </div>
                     </div>
-                    <div className="flex gap-2 ml-4">
+                    <div className="flex gap-2 md:ml-4">
                       <button
                         onClick={() => startEditQuestion(question)}
-                        className="px-3 py-1 bg-orange-500/20 border border-orange-500/30 rounded text-orange-400 hover:bg-orange-500/30 transition-all"
+                        className="px-3 py-1.5 bg-orange-500/20 border border-orange-500/30 rounded text-orange-400 hover:bg-orange-500/30 transition-all text-xs md:text-sm flex-1 md:flex-none"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDeleteQuestion(question.id)}
-                        className="px-3 py-1 bg-red-500/20 border border-red-500/30 rounded text-red-400 hover:bg-red-500/30 transition-all"
+                        className="px-3 py-1.5 bg-red-500/20 border border-red-500/30 rounded text-red-400 hover:bg-red-500/30 transition-all text-xs md:text-sm flex-1 md:flex-none"
                       >
                         Delete
                       </button>

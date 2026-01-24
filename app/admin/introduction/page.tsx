@@ -207,23 +207,23 @@ export default function IntroductionEditPage() {
     <div className="min-h-screen bg-gradient-to-b from-[#0a0e27] via-[#1a1f3a] to-[#0a0e27] relative overflow-hidden">
       <StarsBackground />
       
-      <div className="relative z-10 container mx-auto px-4 py-8">
-        <div className="mb-6">
+      <div className="relative z-10 container mx-auto px-4 py-4 md:py-8">
+        <div className="mb-4 md:mb-6">
           <Link
             href="/admin"
-            className="text-cyan-400 hover:text-cyan-300 mb-4 inline-block"
+            className="text-cyan-400 hover:text-cyan-300 mb-3 md:mb-4 inline-block text-sm md:text-base"
           >
             ← Back to Admin Panel
           </Link>
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 mb-2">
+          <h1 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 mb-2">
             Edit Introduction Page
           </h1>
         </div>
 
-        <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-purple-500/20 p-6">
-          <div className="space-y-6">
+        <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-purple-500/20 p-4 md:p-6">
+          <div className="space-y-4 md:space-y-6">
             <div>
-              <div className="flex justify-between items-center mb-2">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-2">
                 <label className="block text-sm font-medium text-gray-300">
                   Introduction Text
                 </label>
@@ -231,7 +231,7 @@ export default function IntroductionEditPage() {
                   <button
                     type="button"
                     onClick={() => setShowTTSSettings(true)}
-                    className="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-semibold rounded-lg transition-all"
+                    className="px-3 py-1.5 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-xs md:text-sm font-semibold rounded-lg transition-all flex-1 sm:flex-none"
                     title="TTS Settings"
                   >
                     ⚙️ Settings
@@ -240,7 +240,7 @@ export default function IntroductionEditPage() {
                     type="button"
                     onClick={() => handleGenerateAudio(introData.text)}
                     disabled={generatingAudio || !introData.text || introData.text.trim().length === 0}
-                    className="px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 py-1.5 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white text-xs md:text-sm font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
                   >
                     {generatingAudio ? "🔄 Generating..." : "🎙️ Generate Audio & Timestamps"}
                   </button>
@@ -291,17 +291,17 @@ export default function IntroductionEditPage() {
               <p className="text-xs text-gray-400 mt-1">Timestamps URL will be generated automatically when you click "Generate Audio & Timestamps"</p>
             </div>
 
-            <div className="flex gap-4 mt-6">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 mt-4 md:mt-6">
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all disabled:opacity-50 text-sm md:text-base"
               >
                 {saving ? "Saving..." : "Save Introduction"}
               </button>
               <Link
                 href="/admin"
-                className="px-4 py-2 bg-[#0a0e27]/50 border border-gray-500/30 rounded-lg text-gray-300 hover:bg-[#0a0e27]/70 transition-all"
+                className="px-4 py-2 bg-[#0a0e27]/50 border border-gray-500/30 rounded-lg text-gray-300 hover:bg-[#0a0e27]/70 transition-all text-center text-sm md:text-base"
               >
                 Cancel
               </Link>
@@ -312,8 +312,8 @@ export default function IntroductionEditPage() {
         {/* TTS Settings Modal */}
         {showTTSSettings && (
           <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-[#1a1f3a] rounded-2xl border border-purple-500/20 p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-              <h2 className="text-2xl font-bold text-white mb-6">
+            <div className="bg-[#1a1f3a] rounded-2xl border border-purple-500/20 p-4 md:p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6">
                 ⚙️ Inworld TTS Settings
               </h2>
 

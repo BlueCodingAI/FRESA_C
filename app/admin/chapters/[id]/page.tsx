@@ -1694,23 +1694,23 @@ export default function ChapterEditPage() {
     <div className="min-h-screen bg-gradient-to-b from-[#0a0e27] via-[#1a1f3a] to-[#0a0e27] relative overflow-hidden">
       <StarsBackground />
       
-      <div className="relative z-10 container mx-auto px-4 py-8">
-        <div className="mb-6">
+      <div className="relative z-10 container mx-auto px-4 py-4 md:py-8">
+        <div className="mb-4 md:mb-6">
           <Link
             href="/admin"
-            className="text-cyan-400 hover:text-cyan-300 mb-4 inline-block"
+            className="text-cyan-400 hover:text-cyan-300 mb-3 md:mb-4 inline-block text-sm md:text-base"
           >
             ← Back to Admin Panel
           </Link>
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 mb-2">
+          <h1 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 mb-2 break-words">
             {chapter ? `Chapter ${chapter.number}: ${chapter.title}` : "New Chapter"}
           </h1>
           {chapter && (
-            <div className="flex gap-4 mt-4 flex-wrap">
+            <div className="flex flex-col sm:flex-row gap-2 md:gap-4 mt-4 flex-wrap">
               <Link
                 href={`/chapter/${chapter.number}`}
                 target="_blank"
-                className="px-4 py-2 bg-blue-500/20 border border-blue-500/30 rounded-lg text-blue-400 hover:bg-blue-500/30 transition-all text-sm"
+                className="px-3 md:px-4 py-2 bg-blue-500/20 border border-blue-500/30 rounded-lg text-blue-400 hover:bg-blue-500/30 transition-all text-xs md:text-sm text-center"
               >
                 👁️ View Live Page
               </Link>
@@ -1719,14 +1719,14 @@ export default function ChapterEditPage() {
                   await fetchChapter();
                   alert("Content refreshed! Changes should be visible on the website now.");
                 }}
-                className="px-4 py-2 bg-green-500/20 border border-green-500/30 rounded-lg text-green-400 hover:bg-green-500/30 transition-all text-sm"
+                className="px-3 md:px-4 py-2 bg-green-500/20 border border-green-500/30 rounded-lg text-green-400 hover:bg-green-500/30 transition-all text-xs md:text-sm"
               >
                 🔄 Refresh Content
               </button>
-              <div className="flex gap-2">
+              <div className="flex gap-2 w-full sm:w-auto">
                 <button
                   onClick={() => setShowTTSSettings(true)}
-                  className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all text-sm"
+                  className="flex-1 sm:flex-none px-3 md:px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all text-xs md:text-sm"
                   title="TTS Settings"
                 >
                   ⚙️ Settings
@@ -1734,14 +1734,14 @@ export default function ChapterEditPage() {
                 <button
                   onClick={handleGenerateAllChapterAudio}
                   disabled={generatingAllChapterAudio}
-                  className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all text-sm"
+                  className="flex-1 sm:flex-none px-3 md:px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:from-gray-500 disabled:to-gray-600 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all text-xs md:text-sm"
                 >
-                  {generatingAllChapterAudio ? "🔄 Generating All Audio..." : "🎙️ Generate All Audio & Timestamps"}
+                  {generatingAllChapterAudio ? "🔄 Generating..." : "🎙️ Generate All Audio"}
                 </button>
               </div>
               <button
                 onClick={() => setEditingChapterInfo(!editingChapterInfo)}
-                className="px-4 py-2 bg-cyan-500/20 border border-cyan-500/30 rounded-lg text-cyan-400 hover:bg-cyan-500/30 transition-all text-sm"
+                className="px-3 md:px-4 py-2 bg-cyan-500/20 border border-cyan-500/30 rounded-lg text-cyan-400 hover:bg-cyan-500/30 transition-all text-xs md:text-sm"
               >
                 {editingChapterInfo ? "✖️ Cancel Edit" : "✏️ Edit Chapter Info"}
               </button>
@@ -1770,7 +1770,7 @@ export default function ChapterEditPage() {
                     }
                   }
                 }}
-                className="px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/30 transition-all text-sm"
+                className="px-3 md:px-4 py-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/30 transition-all text-xs md:text-sm"
               >
                 🗑️ Delete Chapter
               </button>
@@ -1780,8 +1780,8 @@ export default function ChapterEditPage() {
 
         {/* Chapter Info Edit Form */}
         {chapter && editingChapterInfo && (
-          <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-cyan-500/20 p-6 mb-6">
-            <h2 className="text-2xl font-bold text-white mb-4">Edit Chapter Information</h2>
+          <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-cyan-500/20 p-4 md:p-6 mb-4 md:mb-6">
+            <h2 className="text-xl md:text-2xl font-bold text-white mb-4">Edit Chapter Information</h2>
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -1885,9 +1885,9 @@ export default function ChapterEditPage() {
         )}
 
         {/* Sections List */}
-        <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-cyan-500/20 p-6 mb-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Sections</h2>
+        <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-cyan-500/20 p-4 md:p-6 mb-4 md:mb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 md:mb-6 gap-4">
+            <h2 className="text-xl md:text-2xl font-bold text-white">Sections</h2>
             <button
               onClick={() => {
                 setShowSectionForm(true);
@@ -1907,7 +1907,7 @@ export default function ChapterEditPage() {
                   order: sections.length,
                 });
               }}
-              className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-cyan-500/50 transition-all duration-300"
+              className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-cyan-500/50 transition-all duration-300 text-sm md:text-base w-full sm:w-auto text-center"
             >
               + New Section
             </button>
@@ -1923,19 +1923,19 @@ export default function ChapterEditPage() {
               sections.map((section) => (
                 <div
                   key={section.id}
-                  className="p-4 bg-[#0a0e27]/50 border border-cyan-500/20 rounded-lg"
+                  className="p-3 md:p-4 bg-[#0a0e27]/50 border border-cyan-500/20 rounded-lg"
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-white mb-2">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base md:text-lg font-semibold text-white mb-2">
                         {section.title}
                       </h3>
                       {section.text && (
-                        <p className="text-gray-400 text-sm mb-2 line-clamp-2">
+                        <p className="text-gray-400 text-xs md:text-sm mb-2 line-clamp-2">
                           {section.text}
                         </p>
                       )}
-                      <div className="flex gap-4 text-xs text-gray-500">
+                      <div className="flex flex-wrap gap-2 md:gap-4 text-xs text-gray-500">
                         <span>Type: {section.type}</span>
                         <span>Section #: {section.sectionNumber}</span>
                         <span>Order: {section.order}</span>
@@ -1944,16 +1944,16 @@ export default function ChapterEditPage() {
                         {section.imageUrl && <span>Image: ✓</span>}
                       </div>
                     </div>
-                    <div className="flex gap-2 ml-4">
+                    <div className="flex gap-2 sm:ml-4">
                       <button
                         onClick={() => startEditSection(section)}
-                        className="px-3 py-1 bg-cyan-500/20 border border-cyan-500/30 rounded text-cyan-400 hover:bg-cyan-500/30 transition-all"
+                        className="flex-1 sm:flex-none px-3 py-1.5 text-xs md:text-sm bg-cyan-500/20 border border-cyan-500/30 rounded text-cyan-400 hover:bg-cyan-500/30 transition-all"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDeleteSection(section.id)}
-                        className="px-3 py-1 bg-red-500/20 border border-red-500/30 rounded text-red-400 hover:bg-red-500/30 transition-all"
+                        className="flex-1 sm:flex-none px-3 py-1.5 text-xs md:text-sm bg-red-500/20 border border-red-500/30 rounded text-red-400 hover:bg-red-500/30 transition-all"
                       >
                         Delete
                       </button>
@@ -1967,9 +1967,9 @@ export default function ChapterEditPage() {
 
 
         {/* Quiz Questions List */}
-        <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-cyan-500/20 p-6 mb-6">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Quiz Questions</h2>
+        <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-cyan-500/20 p-4 md:p-6 mb-4 md:mb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 md:mb-6 gap-4">
+            <h2 className="text-xl md:text-2xl font-bold text-white">Quiz Questions</h2>
             <button
               onClick={() => {
                 setShowQuestionForm(true);
@@ -1983,7 +1983,7 @@ export default function ChapterEditPage() {
                   order: quizQuestions.length,
                 });
               }}
-              className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-purple-500/50 transition-all duration-300"
+              className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-purple-500/50 transition-all duration-300 text-sm md:text-base w-full sm:w-auto text-center"
             >
               + New Question
             </button>
@@ -1999,18 +1999,18 @@ export default function ChapterEditPage() {
               quizQuestions.map((question) => (
                 <div
                   key={question.id}
-                  className="p-4 bg-[#0a0e27]/50 border border-purple-500/20 rounded-lg"
+                  className="p-3 md:p-4 bg-[#0a0e27]/50 border border-purple-500/20 rounded-lg"
                 >
-                  <div className="flex justify-between items-start">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-white mb-2">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base md:text-lg font-semibold text-white mb-2">
                         {question.question}
                       </h3>
                       <div className="space-y-1 mb-2">
                         {question.options.map((option, idx) => (
                           <div
                             key={idx}
-                            className={`text-sm ${
+                            className={`text-xs md:text-sm ${
                               idx === question.correctAnswer
                                 ? "text-green-400 font-semibold"
                                 : "text-gray-400"
@@ -2025,16 +2025,16 @@ export default function ChapterEditPage() {
                         Correct Answer: Option {question.correctAnswer + 1} | Order: {question.order}
                       </div>
                     </div>
-                    <div className="flex gap-2 ml-4">
+                    <div className="flex gap-2 sm:ml-4">
                       <button
                         onClick={() => startEditQuestion(question)}
-                        className="px-3 py-1 bg-purple-500/20 border border-purple-500/30 rounded text-purple-400 hover:bg-purple-500/30 transition-all"
+                        className="flex-1 sm:flex-none px-3 py-1.5 text-xs md:text-sm bg-purple-500/20 border border-purple-500/30 rounded text-purple-400 hover:bg-purple-500/30 transition-all"
                       >
                         Edit
                       </button>
                       <button
                         onClick={() => handleDeleteQuestion(question.id)}
-                        className="px-3 py-1 bg-red-500/20 border border-red-500/30 rounded text-red-400 hover:bg-red-500/30 transition-all"
+                        className="flex-1 sm:flex-none px-3 py-1.5 text-xs md:text-sm bg-red-500/20 border border-red-500/30 rounded text-red-400 hover:bg-red-500/30 transition-all"
                       >
                         Delete
                       </button>
@@ -2048,15 +2048,15 @@ export default function ChapterEditPage() {
 
         {/* Section Form Modal */}
         {showSectionForm && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-[#1a1f3a] rounded-2xl border border-cyan-500/20 p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-              <h2 className="text-2xl font-bold text-white mb-6">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 md:p-4">
+            <div className="bg-[#1a1f3a] rounded-2xl border border-cyan-500/20 p-4 md:p-6 w-full max-w-2xl max-h-[95vh] md:max-h-[90vh] overflow-y-auto">
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6">
                 {editingSection ? "Edit Section" : "New Section"}
               </h2>
 
-              <div className="space-y-4">
+              <div className="space-y-3 md:space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-300 mb-1 md:mb-2">
                     Section Number
                   </label>
                   <input
@@ -2068,12 +2068,12 @@ export default function ChapterEditPage() {
                         sectionNumber: parseInt(e.target.value),
                       })
                     }
-                    className="w-full px-4 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white"
+                    className="w-full px-3 md:px-4 py-2 text-sm md:text-base bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-300 mb-1 md:mb-2">
                     Title
                   </label>
                   <input
@@ -2082,12 +2082,12 @@ export default function ChapterEditPage() {
                     onChange={(e) =>
                       setSectionForm({ ...sectionForm, title: e.target.value })
                     }
-                    className="w-full px-4 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white"
+                    className="w-full px-3 md:px-4 py-2 text-sm md:text-base bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-300 mb-1 md:mb-2">
                     Type
                   </label>
                   <select
@@ -2095,22 +2095,22 @@ export default function ChapterEditPage() {
                     onChange={(e) =>
                       setSectionForm({ ...sectionForm, type: e.target.value })
                     }
-                    className="w-full px-4 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white"
+                    className="w-full px-3 md:px-4 py-2 text-sm md:text-base bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white"
                   >
                     <option value="content">Content</option>
                   </select>
                 </div>
 
                 <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="block text-sm font-medium text-gray-300">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
+                    <label className="block text-xs md:text-sm font-medium text-gray-300">
                       Text Content
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <button
                         type="button"
                         onClick={() => setShowTTSSettings(true)}
-                        className="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-semibold rounded-lg transition-all"
+                        className="px-2 md:px-3 py-1 text-xs md:text-sm bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all"
                         title="TTS Settings"
                       >
                         ⚙️ Settings
@@ -2119,7 +2119,7 @@ export default function ChapterEditPage() {
                         type="button"
                         onClick={() => handleGenerateAudio(sectionForm.text || "")}
                         disabled={generatingAudio || !sectionForm.text || sectionForm.text.trim().length === 0}
-                        className="px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-2 md:px-3 py-1 text-xs md:text-sm bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                       >
                         {generatingAudio ? "🔄 Generating..." : "🎙️ Generate Audio & Timestamps"}
                       </button>
@@ -2133,12 +2133,12 @@ export default function ChapterEditPage() {
                     rows={8}
                     placeholder="Enter section text content..."
                   />
-                  <div className="flex justify-between items-center mt-1">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-1 mt-1">
                     <p className="text-xs text-gray-400">
                       Enter your text and click "Generate Audio & Timestamps" to automatically create audio and timestamp files using Inworld AI
                     </p>
                     <span
-                      className={`text-xs font-semibold ${
+                      className={`text-xs font-semibold whitespace-nowrap ${
                         stripHTML(sectionForm.text || "").length > 2000
                           ? "text-red-400"
                           : stripHTML(sectionForm.text || "").length > 1800
@@ -2152,20 +2152,20 @@ export default function ChapterEditPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-300 mb-1 md:mb-2">
                     Audio URL
                   </label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <input
                       type="text"
                       value={sectionForm.audioUrl || ""}
                       onChange={(e) =>
                         setSectionForm({ ...sectionForm, audioUrl: e.target.value })
                       }
-                      className="flex-1 px-4 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white"
+                      className="flex-1 px-3 md:px-4 py-2 text-sm md:text-base bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white"
                       placeholder="/audio/chapter1-section1.mp3"
                     />
-                    <label className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    <label className="px-3 md:px-4 py-2 text-xs md:text-sm bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed text-center whitespace-nowrap">
                       {uploadingAudio ? "Uploading..." : "📁 Upload"}
                       <input
                         type="file"
@@ -2185,10 +2185,10 @@ export default function ChapterEditPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-300 mb-1 md:mb-2">
                     Timestamps URL
                   </label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <input
                       type="text"
                       value={sectionForm.timestampsUrl || ""}
@@ -2198,10 +2198,10 @@ export default function ChapterEditPage() {
                           timestampsUrl: e.target.value,
                         })
                       }
-                      className="flex-1 px-4 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white"
+                      className="flex-1 px-3 md:px-4 py-2 text-sm md:text-base bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white"
                       placeholder="/timestamps/chapter1-section1.timestamps.json"
                     />
-                    <label className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    <label className="px-3 md:px-4 py-2 text-xs md:text-sm bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed text-center whitespace-nowrap">
                       {uploadingTimestamps ? "Uploading..." : "📁 Upload"}
                       <input
                         type="file"
@@ -2221,7 +2221,7 @@ export default function ChapterEditPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-300 mb-1 md:mb-2">
                     Section Image
                   </label>
                   {sectionForm.imageUrl ? (
@@ -2230,7 +2230,7 @@ export default function ChapterEditPage() {
                         <img
                           src={sectionForm.imageUrl}
                           alt="Section preview"
-                          className="max-w-full h-auto max-h-64 rounded-lg border border-cyan-500/30 shadow-lg"
+                          className="max-w-full h-auto max-h-48 md:max-h-64 rounded-lg border border-cyan-500/30 shadow-lg"
                           onError={(e) => {
                             (e.target as HTMLImageElement).src = '/placeholder-image.png';
                           }}
@@ -2238,27 +2238,27 @@ export default function ChapterEditPage() {
                         <button
                           type="button"
                           onClick={handleRemoveImage}
-                          className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-2 shadow-lg transition-all"
+                          className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1.5 md:p-2 shadow-lg transition-all"
                           title="Remove image"
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3 h-3 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </button>
                       </div>
                     </div>
                   ) : null}
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <input
                       type="text"
                       value={sectionForm.imageUrl || ""}
                       onChange={(e) =>
                         setSectionForm({ ...sectionForm, imageUrl: e.target.value })
                       }
-                      className="flex-1 px-4 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white"
+                      className="flex-1 px-3 md:px-4 py-2 text-sm md:text-base bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white"
                       placeholder="/images/chapter1-section1.jpg"
                     />
-                    <label className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold rounded-lg cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    <label className="px-3 md:px-4 py-2 text-xs md:text-sm bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold rounded-lg cursor-pointer transition-all disabled:opacity-50 disabled:cursor-not-allowed text-center whitespace-nowrap">
                       {uploadingImage ? "Uploading..." : "🖼️ Upload"}
                       <input
                         type="file"
@@ -2283,7 +2283,7 @@ export default function ChapterEditPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-300 mb-1 md:mb-2">
                     Order
                   </label>
                   <input
@@ -2295,15 +2295,15 @@ export default function ChapterEditPage() {
                         order: parseInt(e.target.value),
                       })
                     }
-                    className="w-full px-4 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white"
+                    className="w-full px-3 md:px-4 py-2 text-sm md:text-base bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white"
                   />
                 </div>
               </div>
 
-              <div className="flex gap-4 mt-6">
+              <div className="flex flex-col sm:flex-row gap-2 md:gap-4 mt-4 md:mt-6">
                 <button
                   onClick={() => handleSaveSection(editingSection || undefined)}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg transition-all"
+                  className="flex-1 px-4 py-2.5 text-sm md:text-base bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg transition-all"
                 >
                   Save
                 </button>
@@ -2312,7 +2312,7 @@ export default function ChapterEditPage() {
                     setShowSectionForm(false);
                     setEditingSection(null);
                   }}
-                  className="px-4 py-2 bg-[#0a0e27]/50 border border-gray-500/30 rounded-lg text-gray-300 hover:bg-[#0a0e27]/70 transition-all"
+                  className="px-4 py-2.5 text-sm md:text-base bg-[#0a0e27]/50 border border-gray-500/30 rounded-lg text-gray-300 hover:bg-[#0a0e27]/70 transition-all"
                 >
                   Cancel
                 </button>
@@ -2323,23 +2323,23 @@ export default function ChapterEditPage() {
 
         {/* Question Form Modal */}
         {showQuestionForm && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-[#1a1f3a] rounded-2xl border border-purple-500/20 p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-              <h2 className="text-2xl font-bold text-white mb-6">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-2 md:p-4">
+            <div className="bg-[#1a1f3a] rounded-2xl border border-purple-500/20 p-4 md:p-6 w-full max-w-3xl max-h-[95vh] md:max-h-[90vh] overflow-y-auto">
+              <h2 className="text-xl md:text-2xl font-bold text-white mb-4 md:mb-6">
                 {editingQuestion ? "Edit Question" : "New Question"}
               </h2>
 
               <div className="space-y-4">
                 <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="block text-sm font-medium text-gray-300">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
+                    <label className="block text-xs md:text-sm font-medium text-gray-300">
                       Question
                     </label>
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <button
                         type="button"
                         onClick={() => setShowTTSSettings(true)}
-                        className="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-semibold rounded-lg transition-all"
+                        className="px-2 md:px-3 py-1 text-xs md:text-sm bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all"
                         title="TTS Settings"
                       >
                         ⚙️ Settings
@@ -2348,7 +2348,7 @@ export default function ChapterEditPage() {
                         type="button"
                         onClick={handleGenerateQuestionAudio}
                         disabled={generatingQuestionAudio || !questionForm.question || questionForm.question.trim().length === 0}
-                        className="px-3 py-1 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="px-2 md:px-3 py-1 text-xs md:text-sm bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                       >
                         {generatingQuestionAudio ? "🔄 Generating..." : "🎙️ Generate Audio"}
                       </button>
@@ -2388,8 +2388,8 @@ export default function ChapterEditPage() {
                 </div>
 
                 <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="block text-sm font-medium text-gray-300">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
+                    <label className="block text-xs md:text-sm font-medium text-gray-300">
                       Answer Options (select correct answer with radio button)
                     </label>
                     <button
@@ -2398,7 +2398,7 @@ export default function ChapterEditPage() {
                         const newOptions = [...(questionForm.options || []), ""];
                         setQuestionForm({ ...questionForm, options: newOptions });
                       }}
-                      className="px-3 py-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white text-sm font-semibold rounded-lg transition-all"
+                      className="px-2 md:px-3 py-1 text-xs md:text-sm bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all whitespace-nowrap"
                     >
                       + Add Option
                     </button>
@@ -2420,7 +2420,7 @@ export default function ChapterEditPage() {
                             onChange={() =>
                               setQuestionForm({ ...questionForm, correctAnswer: idx })
                             }
-                            className="w-4 h-4 text-purple-500"
+                            className="w-4 h-4 text-purple-500 flex-shrink-0"
                           />
                           <input
                             type="text"
@@ -2430,7 +2430,7 @@ export default function ChapterEditPage() {
                               newOptions[idx] = e.target.value;
                               setQuestionForm({ ...questionForm, options: newOptions });
                             }}
-                            className="flex-1 px-4 py-2 bg-[#0a0e27]/50 border border-purple-500/30 rounded-lg text-white"
+                            className="flex-1 min-w-0 px-3 md:px-4 py-2 text-sm md:text-base bg-[#0a0e27]/50 border border-purple-500/30 rounded-lg text-white"
                             placeholder={`Option ${idx + 1}`}
                           />
                           {(questionForm.options || []).length > 2 && (
@@ -2454,7 +2454,7 @@ export default function ChapterEditPage() {
                                   correctAnswer: newCorrectAnswer
                                 });
                               }}
-                              className="px-3 py-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/30 transition-all text-sm"
+                              className="px-2 md:px-3 py-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-400 hover:bg-red-500/30 transition-all text-xs md:text-sm flex-shrink-0"
                               title="Remove this option"
                             >
                               ✕
@@ -2495,12 +2495,12 @@ export default function ChapterEditPage() {
                       ⚠️ At least 2 options are required
                     </p>
                   )}
-                  <div className="mt-3 flex justify-between items-center gap-2">
+                  <div className="mt-3 flex flex-col sm:flex-row gap-2">
                     <button
                       type="button"
                       onClick={handleGenerateAllAudio}
                       disabled={generatingAllAudio || !questionForm.question || (questionForm.options || []).length < 2 || !questionForm.explanation?.correct?.trim() || !questionForm.explanation?.incorrect || questionForm.explanation.incorrect.length === 0}
-                      className="px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 px-3 md:px-4 py-2 text-xs md:text-sm bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {generatingAllAudio ? "🔄 Generating All Audio..." : "🎙️ Generate All Audio"}
                     </button>
@@ -2508,7 +2508,7 @@ export default function ChapterEditPage() {
                       type="button"
                       onClick={handleGenerateQuizAudio}
                       disabled={generatingQuizAudio || generatingAllAudio || !questionForm.question || (questionForm.options || []).length < 2}
-                      className="px-4 py-2 bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex-1 px-3 md:px-4 py-2 text-xs md:text-sm bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {generatingQuizAudio ? (
                         quizGenerationProgress.generatingQuestion 
@@ -2545,15 +2545,15 @@ export default function ChapterEditPage() {
                 </div>
 
                 <div>
-                  <div className="flex justify-between items-center mb-2">
-                    <label className="block text-sm font-medium text-gray-300">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
+                    <label className="block text-xs md:text-sm font-medium text-gray-300">
                       Correct Answer Explanation
                     </label>
                     <button
                       type="button"
                       onClick={handleGenerateCorrectExplanationAudio}
                       disabled={generatingCorrectExplanationAudio || !questionForm.explanation?.correct?.trim()}
-                      className="px-3 py-1 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-2 md:px-3 py-1 text-xs md:text-sm bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
                     >
                       {generatingCorrectExplanationAudio ? "🔄 Generating..." : "🎙️ Generate Audio"}
                     </button>
@@ -2594,7 +2594,7 @@ export default function ChapterEditPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-300 mb-2">
                     Incorrect Answer Explanations (one for each wrong option)
                   </label>
                   <div className="space-y-3">
@@ -2626,40 +2626,42 @@ export default function ChapterEditPage() {
                       const hasAudio = incorrectAudioUrls[optionIdx] && incorrectTimestampsUrls[optionIdx];
                       
                       return (
-                        <div key={optionIdx} className="border border-red-500/30 rounded-lg p-3 bg-red-500/5">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="text-sm font-medium text-red-400">
+                        <div key={optionIdx} className="border border-red-500/30 rounded-lg p-2 md:p-3 bg-red-500/5">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 mb-2">
+                            <span className="text-xs md:text-sm font-medium text-red-400">
                               Explanation for Option {optionIdx + 1} (Wrong Answer):
                             </span>
                             <span className="text-xs text-gray-400 italic">"{option}"</span>
                           </div>
-                          <div className="flex gap-2 items-start">
-                            <RichTextEditor
-                              value={incorrectText}
-                              onChange={(value) => {
-                                const newIncorrect = [...(questionForm.explanation?.incorrect || [])];
-                                // Ensure array is long enough
-                                while (newIncorrect.length <= optionIdx) {
-                                  newIncorrect.push("");
-                                }
-                                newIncorrect[optionIdx] = value;
-                                setQuestionForm({
-                                  ...questionForm,
-                                  explanation: {
-                                    ...questionForm.explanation,
-                                    correct: questionForm.explanation?.correct || "",
-                                    incorrect: newIncorrect,
-                                  },
-                                });
-                              }}
-                              rows={2}
-                              placeholder={`Why is option ${optionIdx + 1} incorrect?`}
-                            />
+                          <div className="flex flex-col sm:flex-row gap-2 items-start">
+                            <div className="flex-1 w-full">
+                              <RichTextEditor
+                                value={incorrectText}
+                                onChange={(value) => {
+                                  const newIncorrect = [...(questionForm.explanation?.incorrect || [])];
+                                  // Ensure array is long enough
+                                  while (newIncorrect.length <= optionIdx) {
+                                    newIncorrect.push("");
+                                  }
+                                  newIncorrect[optionIdx] = value;
+                                  setQuestionForm({
+                                    ...questionForm,
+                                    explanation: {
+                                      ...questionForm.explanation,
+                                      correct: questionForm.explanation?.correct || "",
+                                      incorrect: newIncorrect,
+                                    },
+                                  });
+                                }}
+                                rows={2}
+                                placeholder={`Why is option ${optionIdx + 1} incorrect?`}
+                              />
+                            </div>
                             <button
                               type="button"
                               onClick={() => handleGenerateIncorrectExplanationAudio(optionIdx)}
                               disabled={generatingIncorrectExplanationAudio === optionIdx || generatingAllAudio || !incorrectText?.trim()}
-                              className="px-3 py-2 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white text-sm font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+                              className="px-2 md:px-3 py-2 text-xs md:text-sm bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap w-full sm:w-auto"
                             >
                               {generatingIncorrectExplanationAudio === optionIdx || isGenerating ? "🔄..." : "🎙️ Generate Audio"}
                             </button>
@@ -2697,7 +2699,7 @@ export default function ChapterEditPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-xs md:text-sm font-medium text-gray-300 mb-1 md:mb-2">
                     Order
                   </label>
                   <input
@@ -2709,15 +2711,15 @@ export default function ChapterEditPage() {
                         order: parseInt(e.target.value),
                       })
                     }
-                    className="w-full px-4 py-2 bg-[#0a0e27]/50 border border-purple-500/30 rounded-lg text-white"
+                    className="w-full px-3 md:px-4 py-2 text-sm md:text-base bg-[#0a0e27]/50 border border-purple-500/30 rounded-lg text-white"
                   />
                 </div>
               </div>
 
-              <div className="flex gap-4 mt-6">
+              <div className="flex flex-col sm:flex-row gap-2 md:gap-4 mt-4 md:mt-6">
                 <button
                   onClick={() => handleSaveQuestion(editingQuestion || undefined)}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all"
+                  className="flex-1 px-4 py-2.5 text-sm md:text-base bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all"
                 >
                   Save
                 </button>
@@ -2726,7 +2728,7 @@ export default function ChapterEditPage() {
                     setShowQuestionForm(false);
                     setEditingQuestion(null);
                   }}
-                  className="px-4 py-2 bg-[#0a0e27]/50 border border-gray-500/30 rounded-lg text-gray-300 hover:bg-[#0a0e27]/70 transition-all"
+                  className="px-4 py-2.5 text-sm md:text-base bg-[#0a0e27]/50 border border-gray-500/30 rounded-lg text-gray-300 hover:bg-[#0a0e27]/70 transition-all"
                 >
                   Cancel
                 </button>

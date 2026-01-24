@@ -63,27 +63,27 @@ export default function NewChapterPage() {
     <div className="min-h-screen bg-gradient-to-b from-[#0a0e27] via-[#1a1f3a] to-[#0a0e27] relative overflow-hidden">
       <StarsBackground />
       
-      <div className="relative z-10 container mx-auto px-4 py-8">
-        <div className="mb-6">
+      <div className="relative z-10 container mx-auto px-4 py-4 md:py-8">
+        <div className="mb-4 md:mb-6">
           <Link
             href="/admin"
-            className="text-cyan-400 hover:text-cyan-300 mb-4 inline-block"
+            className="text-cyan-400 hover:text-cyan-300 mb-3 md:mb-4 inline-block text-sm md:text-base"
           >
             ← Back to Admin Panel
           </Link>
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 mb-2">
+          <h1 className="text-2xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 mb-2">
             Create New Chapter
           </h1>
         </div>
 
-        <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-cyan-500/20 p-6 max-w-2xl">
+        <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-cyan-500/20 p-4 md:p-6 max-w-2xl">
           {error && (
             <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-300 mb-2">
                 Chapter Number
@@ -96,7 +96,7 @@ export default function NewChapterPage() {
                 }
                 required
                 min="1"
-                className="w-full px-4 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                className="w-full px-4 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-sm md:text-base"
               />
               <p className="text-gray-400 text-xs mt-1">
                 Note: Chapter numbers start from 1. Introduction is managed separately (not a chapter).
@@ -114,7 +114,7 @@ export default function NewChapterPage() {
                   setFormData({ ...formData, title: e.target.value })
                 }
                 required
-                className="w-full px-4 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                className="w-full px-4 py-2 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-cyan-500/50 text-sm md:text-base"
                 placeholder="e.g., The Real Estate Business"
               />
             </div>
@@ -133,17 +133,17 @@ export default function NewChapterPage() {
               />
             </div>
 
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
               <button
                 type="submit"
                 disabled={loading}
-                className="flex-1 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg transition-all disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg transition-all disabled:opacity-50 text-sm md:text-base"
               >
                 {loading ? "Creating..." : "Create Chapter"}
               </button>
               <Link
                 href="/admin"
-                className="px-4 py-2 bg-[#0a0e27]/50 border border-gray-500/30 rounded-lg text-gray-300 hover:bg-[#0a0e27]/70 transition-all"
+                className="px-4 py-2 bg-[#0a0e27]/50 border border-gray-500/30 rounded-lg text-gray-300 hover:bg-[#0a0e27]/70 transition-all text-center text-sm md:text-base"
               >
                 Cancel
               </Link>

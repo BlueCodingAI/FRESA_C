@@ -105,16 +105,16 @@ export default function AdminStudentsPage() {
     <div className="min-h-screen bg-gradient-to-b from-[#0a0e27] via-[#1a1f3a] to-[#0a0e27] relative overflow-hidden">
       <StarsBackground />
 
-      <div className="relative z-10 container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
+      <div className="relative z-10 container mx-auto px-4 py-4 md:py-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-white">Students</h1>
-            <p className="text-gray-400 text-sm">Name, Email, Date of Registration</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-white">Students</h1>
+            <p className="text-gray-400 text-xs md:text-sm">Name, Email, Date of Registration</p>
           </div>
           <div className="flex gap-3">
             <Link
               href="/admin"
-              className="px-4 py-2 bg-[#1a1f3a]/80 border border-cyan-500/30 rounded-lg text-cyan-400 hover:bg-cyan-500/10 transition-all"
+              className="px-4 py-2 bg-[#1a1f3a]/80 border border-cyan-500/30 rounded-lg text-cyan-400 hover:bg-cyan-500/10 transition-all text-sm md:text-base w-full md:w-auto text-center"
             >
               ← Back
             </Link>
@@ -128,7 +128,42 @@ export default function AdminStudentsPage() {
         )}
 
         <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-cyan-500/20 overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Mobile: Card Layout */}
+          <div className="md:hidden space-y-3 p-4">
+            {students.length === 0 ? (
+              <div className="text-center py-6 text-gray-400">
+                No students yet.
+              </div>
+            ) : (
+              students.map((s) => (
+                <div key={s.id} className="bg-[#0a0e27]/50 border border-cyan-500/20 rounded-lg p-4 space-y-2">
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Name</div>
+                    <div className="text-white text-sm font-medium">{s.name || "(no name)"}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Email</div>
+                    <div className="text-cyan-200 text-sm break-all">{s.email}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-400 mb-1">Registered</div>
+                    <div className="text-gray-300 text-sm">{new Date(s.createdAt).toLocaleString()}</div>
+                  </div>
+                  <div className="pt-2">
+                    <button
+                      onClick={() => deleteStudent(s.id, s.email)}
+                      className="w-full px-3 py-2 bg-red-500/20 border border-red-500/30 rounded-lg text-red-300 hover:bg-red-500/30 transition-all text-sm"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Desktop: Table Layout */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left">
               <thead className="bg-[#0a0e27]/60">
                 <tr>
