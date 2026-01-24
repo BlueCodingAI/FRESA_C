@@ -77,16 +77,16 @@ export default function UserMenu() {
 
   if (!user) {
     return (
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2.5 md:gap-4 w-full md:w-auto">
         <Link
           href="/login"
-          className="px-4 py-2 text-cyan-400 hover:text-cyan-300 transition-colors font-medium"
+          className="w-full md:w-auto px-6 py-3 text-center text-cyan-400 hover:text-white hover:bg-gradient-to-r hover:from-cyan-500/20 hover:to-blue-500/20 transition-all font-semibold rounded-xl border border-cyan-500/50 md:border-0 backdrop-blur-sm shadow-md hover:shadow-cyan-500/30 transform hover:scale-[1.02] active:scale-[0.98]"
         >
           Login
         </Link>
         <Link
           href="/signup"
-          className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg transition-all"
+          className="w-full md:w-auto px-6 py-3 text-center bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-cyan-500/50 transform hover:scale-[1.02] active:scale-[0.98]"
         >
           Sign Up
         </Link>
@@ -120,10 +120,10 @@ export default function UserMenu() {
   };
 
   return (
-    <div className="relative">
+    <div className="relative w-full md:w-auto">
       <button
         onClick={() => setShowMenu(!showMenu)}
-        className="flex items-center gap-2 px-3 py-1.5 bg-[#1a1f3a]/60 border border-cyan-500/30 rounded-lg hover:bg-cyan-500/10 transition-all"
+        className="w-full md:w-auto flex items-center justify-center gap-2 px-4 py-3 bg-[#1a1f3a]/60 border border-cyan-500/30 rounded-lg hover:bg-cyan-500/10 transition-all font-medium"
       >
         {/* Avatar */}
         <div className={`w-8 h-8 rounded-full bg-gradient-to-r ${getRoleColor(user.role)} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>

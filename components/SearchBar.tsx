@@ -27,7 +27,11 @@ interface SearchResponse {
   totalResults: number;
 }
 
-export default function SearchBar() {
+interface SearchBarProps {
+  onOpen?: () => void;
+}
+
+export default function SearchBar({ onOpen }: SearchBarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showRegistrationPrompt, setShowRegistrationPrompt] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -120,6 +124,7 @@ export default function SearchBar() {
     // Check if user is authenticated
     if (isAuthenticated === false) {
       setShowRegistrationPrompt(true);
+      onOpen?.();
       return;
     }
     
@@ -133,11 +138,13 @@ export default function SearchBar() {
       
       if (!token) {
         setShowRegistrationPrompt(true);
+        onOpen?.();
         return;
       }
     }
     
     setIsOpen(true);
+    onOpen?.();
   };
 
   const handleSearch = async (query: string) => {

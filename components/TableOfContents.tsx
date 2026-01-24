@@ -91,7 +91,7 @@ export default function TableOfContents({ items, currentPath, activeSectionId }:
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-20 right-4 z-50 bg-[#1e3a5f] border border-blue-500/30 rounded-lg p-3 shadow-lg hover:bg-[#2d4a6f] transition-all duration-200 md:hidden"
+        className="fixed top-20 left-4 z-50 bg-[#1e3a5f] border border-blue-500/30 rounded-lg p-2 shadow-lg hover:bg-[#2d4a6f] transition-all duration-200 md:hidden"
         aria-label="Toggle menu"
       >
         <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
