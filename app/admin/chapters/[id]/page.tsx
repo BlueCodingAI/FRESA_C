@@ -2133,9 +2133,22 @@ export default function ChapterEditPage() {
                     rows={8}
                     placeholder="Enter section text content..."
                   />
-                  <p className="text-xs text-gray-400 mt-1">
-                    Enter your text and click "Generate Audio & Timestamps" to automatically create audio and timestamp files using Inworld AI
-                  </p>
+                  <div className="flex justify-between items-center mt-1">
+                    <p className="text-xs text-gray-400">
+                      Enter your text and click "Generate Audio & Timestamps" to automatically create audio and timestamp files using Inworld AI
+                    </p>
+                    <span
+                      className={`text-xs font-semibold ${
+                        stripHTML(sectionForm.text || "").length > 2000
+                          ? "text-red-400"
+                          : stripHTML(sectionForm.text || "").length > 1800
+                          ? "text-yellow-400"
+                          : "text-gray-400"
+                      }`}
+                    >
+                      {stripHTML(sectionForm.text || "").length} / 2000 characters
+                    </span>
+                  </div>
                 </div>
 
                 <div>
