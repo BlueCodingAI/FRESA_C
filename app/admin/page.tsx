@@ -29,6 +29,8 @@ export default function AdminPage() {
   const [chapters, setChapters] = useState<Chapter[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [editingChapterNumber, setEditingChapterNumber] = useState<string | null>(null);
+  const [chapterNumberInput, setChapterNumberInput] = useState<{ [key: string]: number }>({});
 
   useEffect(() => {
     checkAuth();
@@ -113,6 +115,102 @@ export default function AdminPage() {
   const handleLogout = () => {
     document.cookie = "auth-token=; path=/; max-age=0";
     router.push("/login");
+  };
+
+  const handleEditChapterNumber = (chapterId: string, currentNumber: number) => {
+    setEditingChapterNumber(chapterId);
+    setChapterNumberInput({ ...chapterNumberInput, [chapterId]: currentNumber });
+  };
+
+  const handleSaveChapterNumber = async (chapterId: string, chapterTitle: string) => {
+    const newNumber = chapterNumberInput[chapterId];
+    
+    if (!newNumber || newNumber < 1) {
+      alert("Chapter number must be at least 1");
+      return;
+    }
+
+    // Check if another chapter already has this number
+    const existingChapter = chapters.find(
+      (ch) => ch.number === newNumber && ch.id !== chapterId
+    );
+    
+    if (existingChapter) {
+      if (!confirm(`Chapter ${newNumber} already exists (${existingChapter.title}). Do you want to swap the numbers?`)) {
+        return;
+      }
+    }
+
+    try {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("auth-token="))
+        ?.split("=")[1];
+
+      if (!token) {
+        alert("Not authenticated");
+        return;
+      }
+
+      // If swapping, update both chapters
+      if (existingChapter) {
+        const currentChapter = chapters.find((ch) => ch.id === chapterId);
+        if (currentChapter) {
+          // Update the existing chapter to the current chapter's number
+          await fetch(`/api/admin/chapters/${existingChapter.id}`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+              number: currentChapter.number,
+              title: existingChapter.title,
+              description: existingChapter.description,
+            }),
+          });
+        }
+      }
+
+      // Update the current chapter
+      const currentChapter = chapters.find((ch) => ch.id === chapterId);
+      if (!currentChapter) {
+        alert("Chapter not found");
+        return;
+      }
+
+      const response = await fetch(`/api/admin/chapters/${chapterId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          number: newNumber,
+          title: currentChapter.title,
+          description: currentChapter.description,
+        }),
+      });
+
+      if (response.ok) {
+        setEditingChapterNumber(null);
+        await fetchChapters();
+        alert(`Chapter number updated to ${newNumber}`);
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        alert(`Error: ${errorData.error || "Failed to update chapter number"}`);
+      }
+    } catch (err) {
+      console.error("Error updating chapter number:", err);
+      alert("Failed to update chapter number");
+    }
+  };
+
+  const handleCancelEditChapterNumber = () => {
+    setEditingChapterNumber(null);
+    setChapterNumberInput({});
   };
 
   if (loading) {
@@ -276,9 +374,60 @@ export default function AdminPage() {
                 >
                   <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-3 md:gap-4">
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-lg md:text-xl font-semibold text-white mb-1 break-words">
-                        Chapter {chapter.number}: {chapter.title || "Untitled Chapter"}
-                      </h3>
+                      <div className="flex items-center gap-2 md:gap-3 mb-1 flex-wrap">
+                        {editingChapterNumber === chapter.id ? (
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg md:text-xl font-semibold text-white">Chapter</span>
+                            <input
+                              type="number"
+                              min="1"
+                              value={chapterNumberInput[chapter.id] || chapter.number}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                if (!isNaN(value) && value > 0) {
+                                  setChapterNumberInput({
+                                    ...chapterNumberInput,
+                                    [chapter.id]: value,
+                                  });
+                                }
+                              }}
+                              className="w-20 px-2 py-1 bg-[#1a1f3a] border border-cyan-500/50 rounded text-white text-lg md:text-xl font-semibold focus:outline-none focus:border-cyan-500"
+                              autoFocus
+                            />
+                            <span className="text-lg md:text-xl font-semibold text-white">:</span>
+                            <span className="text-lg md:text-xl font-semibold text-white break-words">
+                              {chapter.title || "Untitled Chapter"}
+                            </span>
+                            <button
+                              onClick={() => handleSaveChapterNumber(chapter.id, chapter.title)}
+                              className="px-2 py-1 bg-green-500/20 border border-green-500/50 rounded text-green-400 hover:bg-green-500/30 text-xs md:text-sm transition-all"
+                              title="Save"
+                            >
+                              ✓
+                            </button>
+                            <button
+                              onClick={handleCancelEditChapterNumber}
+                              className="px-2 py-1 bg-red-500/20 border border-red-500/50 rounded text-red-400 hover:bg-red-500/30 text-xs md:text-sm transition-all"
+                              title="Cancel"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <>
+                            <h3 className="text-lg md:text-xl font-semibold text-white break-words">
+                              Chapter {chapter.number}: {chapter.title || "Untitled Chapter"}
+                            </h3>
+                            <button
+                              onClick={() => handleEditChapterNumber(chapter.id, chapter.number)}
+                              className="px-2 py-1 bg-cyan-500/20 border border-cyan-500/50 rounded text-cyan-400 hover:bg-cyan-500/30 text-xs transition-all"
+                              title="Change Chapter Number"
+                            >
+                              ✏️
+                            </button>
+                          </>
+                        )}
+                      </div>
                       {chapter.description ? (
                         <p className="text-gray-400 text-xs md:text-sm mb-2 line-clamp-2">{chapter.description}</p>
                       ) : (
