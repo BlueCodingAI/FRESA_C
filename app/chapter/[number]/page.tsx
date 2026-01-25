@@ -815,6 +815,7 @@ export default function ChapterPage() {
                   // For other chapters: show "Take Another Practice Quiz" button
                   return chapterNumber === maxChapterNumber ? handleGoToPracticeExam : handlePracticeAgain;
                 })()}
+                onContinueToNextChapter={handleContinueToNextChapter}
                 retryButtonText="Take the Quiz Again"
               />
             ) : (

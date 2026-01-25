@@ -37,12 +37,13 @@ interface QuizProps {
   onRetry?: () => void; // Callback for retry action
   onContinue?: () => void; // Callback for continue action
   onPracticeAgain?: () => void; // Callback for practice again (when passed)
+  onContinueToNextChapter?: () => void; // Callback for "Continue to Next Chapter" button (for chapter quizzes)
   disableRetry?: boolean; // Disable retry functionality (for End-of-Course Exam)
   disableBack?: boolean; // Disable back navigation (for End-of-Course Exam)
   retryButtonText?: string; // Custom text for retry button (e.g., "Take Practice Quiz Again")
 }
 
-export default function Quiz({ questions, onComplete, showCharacter = true, searchHighlight, shuffle = false, onRetry, onContinue, onPracticeAgain, disableRetry = false, disableBack = false, retryButtonText }: QuizProps) {
+export default function Quiz({ questions, onComplete, showCharacter = true, searchHighlight, shuffle = false, onRetry, onContinue, onPracticeAgain, onContinueToNextChapter, disableRetry = false, disableBack = false, retryButtonText }: QuizProps) {
   // Shuffle questions if shuffle prop is true - recalculate when shuffle changes
   const shuffledQuestions = useMemo(() => {
     if (shuffle) {
@@ -724,7 +725,14 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                   // Chapter Quiz: Show both continue and practice again
                   <div className="flex flex-col sm:flex-row gap-4">
                     <button
-                      onClick={handleViewResultsComplete}
+                      onClick={() => {
+                        // First call onComplete to save progress
+                        handleViewResultsComplete();
+                        // Then navigate to next chapter if handler is provided
+                        if (onContinueToNextChapter) {
+                          onContinueToNextChapter();
+                        }
+                      }}
                       className="flex-1 group relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white font-bold py-3 px-4 md:py-5 md:px-8 rounded-xl text-sm md:text-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50"
                     >
                       <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
