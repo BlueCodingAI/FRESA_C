@@ -435,7 +435,7 @@ export default function ChapterPage() {
       <TableOfContents items={menuItems} currentPath={chapterPath} activeSectionId={activePlayingSectionId || undefined} />
 
       <div className="relative z-10 min-h-screen flex flex-col pt-20 pb-8 px-4 md:px-8 md:ml-64 md:pt-24">
-        <div className="mb-8">
+        <div className={`mb-8 ${currentIndex === 0 ? 'block' : 'hidden md:block'}`}>
           <div className="flex justify-center mb-6">
             <MrListings size="small" isLecturing={true} />
           </div>
