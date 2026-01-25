@@ -41,9 +41,10 @@ interface QuizProps {
   disableRetry?: boolean; // Disable retry functionality (for End-of-Course Exam)
   disableBack?: boolean; // Disable back navigation (for End-of-Course Exam)
   retryButtonText?: string; // Custom text for retry button (e.g., "Take Practice Quiz Again")
+  chapterNumber?: number; // Chapter number for chapter quizzes (to display in title)
 }
 
-export default function Quiz({ questions, onComplete, showCharacter = true, searchHighlight, shuffle = false, onRetry, onContinue, onPracticeAgain, onContinueToNextChapter, disableRetry = false, disableBack = false, retryButtonText }: QuizProps) {
+export default function Quiz({ questions, onComplete, showCharacter = true, searchHighlight, shuffle = false, onRetry, onContinue, onPracticeAgain, onContinueToNextChapter, disableRetry = false, disableBack = false, retryButtonText, chapterNumber }: QuizProps) {
   // Shuffle questions if shuffle prop is true - recalculate when shuffle changes
   const shuffledQuestions = useMemo(() => {
     if (shuffle) {
@@ -575,12 +576,14 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
   // Show results screen if quiz is complete
   if (showResults) {
     const percentage = shuffledQuestions.length > 0 ? Math.round((finalScore / shuffledQuestions.length) * 100) : 0;
-    const passed = percentage >= 80;
+    // End-of-Course Exam uses 75% passing score, others use 80%
+    const passingScore = disableRetry ? 75 : 80;
+    const passed = percentage >= passingScore;
     
     return (
-      <div className="w-full max-w-4xl mx-auto">
+      <div className="w-full max-w-5xl mx-auto">
         {/* Results Screen - Modern Professional Design */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-[#0f1b2e] via-[#1a2f4a] to-[#0f1b2e] border border-blue-500/20 rounded-3xl shadow-2xl backdrop-blur-xl">
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#0f1b2e] via-[#1a2f4a] to-[#0f1b2e] border-2 border-blue-500/30 rounded-3xl shadow-2xl backdrop-blur-xl">
           {/* Decorative Background Elements */}
           <div className="absolute inset-0 opacity-10">
             <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500 rounded-full blur-3xl"></div>
@@ -588,9 +591,9 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
           </div>
           
           <div className="relative z-10 p-8 md:p-12">
-            {/* Character - Top Section */}
+            {/* Character - Top Section - Moved higher */}
             {showCharacter && (
-              <div className="flex justify-center mb-8">
+              <div className="flex justify-center mb-8 -mt-4">
                 <div className="relative">
                   <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse"></div>
                   <div className="relative">
@@ -601,53 +604,67 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
             )}
 
             {/* Results Content */}
-            <div className="text-center mb-10">
-              {/* Title */}
-              <h2 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 mb-6 tracking-tight">
-                Quiz Complete!
-              </h2>
+            <div className="text-center mb-8">
+              {/* Title - Only show if not chapter quiz (to avoid duplication) */}
+              {!chapterNumber && (
+                <h2 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 mb-6 tracking-tight">
+                  Quiz Complete!
+                </h2>
+              )}
               
-              {/* Score Card - Modern Design */}
-              <div className="inline-flex flex-col items-center mb-8">
-                <div className={`relative overflow-hidden rounded-2xl p-8 md:p-10 mb-4 ${
+              {/* Chapter Quiz Title - Integrated into score card - More spacing from bird */}
+              {chapterNumber && (
+                <h2 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-300 to-cyan-300 mb-8 tracking-tight mt-4">
+                  Chapter {chapterNumber} Quiz
+                </h2>
+              )}
+              
+              {/* Score Card - Enhanced Modern Design */}
+              <div className="inline-flex flex-col items-center mb-6">
+                <div className={`relative overflow-hidden rounded-3xl p-10 md:p-12 mb-4 ${
                   passed 
-                    ? "bg-gradient-to-br from-green-500/20 via-emerald-500/20 to-green-500/20 border-2 border-green-400/50 shadow-lg shadow-green-500/20" 
-                    : "bg-gradient-to-br from-amber-500/20 via-yellow-500/20 to-amber-500/20 border-2 border-amber-400/50 shadow-lg shadow-amber-500/20"
+                    ? "bg-gradient-to-br from-green-600/30 via-emerald-500/25 to-green-600/30 border-2 border-green-400/60 shadow-2xl shadow-green-500/30" 
+                    : "bg-gradient-to-br from-amber-600/30 via-yellow-500/25 to-amber-600/30 border-2 border-amber-400/60 shadow-2xl shadow-amber-500/30"
                 }`}>
                   {/* Animated Background */}
-                  <div className={`absolute inset-0 opacity-20 ${
-                    passed ? "bg-gradient-to-r from-green-400 to-emerald-400" : "bg-gradient-to-r from-amber-400 to-yellow-400"
+                  <div className={`absolute inset-0 opacity-25 ${
+                    passed ? "bg-gradient-to-r from-green-400 via-emerald-400 to-green-400" : "bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400"
                   } animate-pulse`}></div>
                   
+                  {/* Glow Effect */}
+                  <div className={`absolute -inset-1 bg-gradient-to-r ${
+                    passed ? "from-green-400 to-emerald-400" : "from-amber-400 to-yellow-400"
+                  } rounded-3xl blur opacity-30 animate-pulse`}></div>
+                  
                   <div className="relative z-10">
-                    {/* Score Display */}
-                    <div className="text-6xl md:text-7xl font-black text-white mb-3 leading-none">
-                      <span className="text-blue-300">{finalScore}</span>
-                      <span className="text-gray-400 mx-2">/</span>
-                      <span className="text-gray-300">{shuffledQuestions.length}</span>
+                    {/* Score Display - Enhanced */}
+                    <div className="text-7xl md:text-8xl font-black text-white mb-4 leading-none">
+                      <span className="text-cyan-300 drop-shadow-lg">{finalScore}</span>
+                      <span className="text-gray-400 mx-3">/</span>
+                      <span className="text-gray-200">{shuffledQuestions.length}</span>
                     </div>
                     
-                    {/* Percentage Badge */}
-                    <div className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-lg md:text-xl font-bold ${
+                    {/* Percentage Badge - Enhanced */}
+                    <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-full text-xl md:text-2xl font-bold shadow-lg ${
                       passed 
-                        ? "bg-green-500/30 text-green-200 border border-green-400/50" 
-                        : "bg-amber-500/30 text-amber-200 border border-amber-400/50"
+                        ? "bg-gradient-to-r from-green-500/40 to-emerald-500/40 text-green-100 border-2 border-green-400/70" 
+                        : "bg-gradient-to-r from-amber-500/40 to-yellow-500/40 text-amber-100 border-2 border-amber-400/70"
                     }`}>
-                      <span className="text-2xl">{percentage}%</span>
-                      <span className="text-sm md:text-base">
-                        {passed ? "✓ Passed" : "Needs Improvement"}
+                      <span className="text-3xl font-black">{percentage}%</span>
+                      <span className="text-base md:text-lg font-semibold">
+                        {passed ? "✓ Passed" : (chapterNumber ? "Failed" : `Needs ${passingScore}% to Pass`)}
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
               
-              {/* Message */}
-              <div className="max-w-2xl mx-auto">
-                <p className={`text-lg md:text-xl leading-relaxed ${
+              {/* Message - Enhanced */}
+              <div className="max-w-2xl mx-auto mb-6">
+                <p className={`text-xl md:text-2xl leading-relaxed font-semibold ${
                   passed 
-                    ? "text-green-100 font-medium" 
-                    : "text-gray-300 font-normal"
+                    ? "text-green-100" 
+                    : "text-gray-300"
                 }`}>
                   {passed 
                     ? (
@@ -656,12 +673,17 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                         {onContinue ? (
                           // Practice Exam: Custom message
                           <>
-                            Congratulations! You've passed the practice exam. What would you like to do?
+                            Congratulations! You've passed the practice exam.
+                          </>
+                        ) : disableRetry ? (
+                          // End-of-Course Exam: Special message
+                          <>
+                            Outstanding! You've successfully passed the End-of-Course Exam! Your achievement will be recorded and you will receive a completion certificate.
                           </>
                         ) : (
                           // Chapter Quiz: Standard message
                           <>
-                            Congratulations! You've successfully passed the quiz and demonstrated your understanding of the material.
+                            Congratulations!
                           </>
                         )}
                       </span>
@@ -672,7 +694,7 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                           <>
                             <br className="hidden md:block" />
                             {/* Chapter Quiz: Simple message - no practice exam references */}
-                            You need to score at least 80% to proceed to the next chapter.
+                            You need a score of at least 80% to proceed.
                           </>
                         )}
                         {!disableRetry && onContinue && (
@@ -680,6 +702,15 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                             <br className="hidden md:block" />
                             {/* Practice Exam: Show warning about 30-day wait */}
                             Because you got less than 80%, we strongly recommend doing another practice exam. If you fail the actual exam, you will have to wait 30 days until you can take it again (this is state law).
+                          </>
+                        )}
+                        {disableRetry && (
+                          <>
+                            <br className="hidden md:block" />
+                            {/* End-of-Course Exam: Show warning about 30-day wait */}
+                            <span className="text-yellow-300 font-semibold">
+                              Unfortunately, you did not pass the End-of-Course Exam. According to state law, you must wait 30 days before you can retake this exam.
+                            </span>
                           </>
                         )}
                       </span>
@@ -691,10 +722,26 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
             {/* Action Buttons - Modern Design */}
             <div className="mt-10">
                   {passed ? (
-                // Passed (>= 80%) - show options based on context
+                // Passed - show options based on context
                 onContinue ? (
-                  // Practice Exam: Show both options
-                  <div className="flex flex-col sm:flex-row gap-4">
+                  // Practice Exam: Show warning first, then both options
+                  <div className="space-y-6">
+                    {/* 30-Day Warning Notice - Before buttons */}
+                    <div className="bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border-2 border-amber-400/50 rounded-xl p-5 md:p-6 max-w-2xl mx-auto">
+                      <div className="flex items-start gap-3">
+                        <svg className="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <div className="flex-1">
+                          <p className="text-yellow-200 font-semibold text-base md:text-lg mb-1">Important Notice</p>
+                          <p className="text-gray-300 text-sm md:text-base leading-relaxed">
+                            If you fail the End-of-Course Exam, you must wait <span className="font-bold text-white">30 days</span> before you can retake it (State Law requirement).
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-4">
                     <button
                       onClick={onContinue}
                       className="flex-1 group relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white font-bold py-3 px-4 md:py-5 md:px-8 rounded-xl text-sm md:text-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50"
@@ -720,6 +767,7 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                         </span>
                       </button>
                     )}
+                    </div>
                   </div>
                 ) : (
                   // Chapter Quiz: Show both continue and practice again
@@ -761,48 +809,67 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
               ) : (
                 // Show retry buttons only if not disabled (for End-of-Course Exam)
                 !disableRetry ? (
-                  <div className="flex flex-col sm:flex-row gap-4">
-                    <button
-                      onClick={() => {
-                        // Call onRetry to trigger parent to reset quiz with new shuffle
-                        if (onRetry) {
-                          onRetry();
-                        }
-                      }}
-                      className="flex-1 group relative overflow-hidden bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-500 hover:from-blue-500 hover:via-cyan-400 hover:to-blue-400 text-white font-bold py-3 px-4 md:py-4 md:px-6 rounded-xl text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50"
-                    >
-                      <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
-                        <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:rotate-180 transition-transform duration-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                        {retryButtonText || "Take the Quiz Again"}
-                      </span>
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                    </button>
-                    {/* Only show continue button if onContinue is provided (for Practice Exam failed) */}
+                  <div className="space-y-6">
+                    {/* Only show warning for Practice Exam (when onContinue is provided) */}
                     {onContinue && (
+                      <div className="bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border-2 border-amber-400/50 rounded-xl p-5 md:p-6 max-w-2xl mx-auto">
+                        <div className="flex items-start gap-3">
+                          <svg className="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                          </svg>
+                          <div className="flex-1">
+                            <p className="text-yellow-200 font-semibold text-base md:text-lg mb-1">Important Notice</p>
+                            <p className="text-gray-300 text-sm md:text-base leading-relaxed">
+                              If you fail the End-of-Course Exam, you must wait <span className="font-bold text-white">30 days</span> before you can retake it (State Law requirement).
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    {/* Buttons */}
+                    <div className="flex flex-col sm:flex-row gap-4">
                       <button
                         onClick={() => {
-                          // Call onContinue (for Practice Exam -> End-of-Course)
-                          onContinue();
+                          // Call onRetry to trigger parent to reset quiz with new shuffle
+                          if (onRetry) {
+                            onRetry();
+                          }
                         }}
-                        className="flex-1 group relative overflow-hidden bg-[#1a2f4a]/80 border-2 border-gray-500/40 hover:border-gray-400/60 text-gray-200 hover:text-white font-semibold py-3 px-4 md:py-4 md:px-6 rounded-xl text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] hover:bg-[#1a2f4a]"
+                        className="flex-1 group relative overflow-hidden bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-500 hover:from-blue-500 hover:via-cyan-400 hover:to-blue-400 text-white font-bold py-3 px-4 md:py-4 md:px-6 rounded-xl text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50"
                       >
                         <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
-                          Take End-Of-Course Exam
-                          <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                          <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:rotate-180 transition-transform duration-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                           </svg>
+                          {retryButtonText || "Take the Quiz Again"}
                         </span>
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                       </button>
-                    )}
-                    {/* Chapter Quiz: No continue button when failed - must retake */}
+                      {/* Only show continue button if onContinue is provided (for Practice Exam failed) */}
+                      {onContinue && (
+                        <button
+                          onClick={() => {
+                            // Call onContinue (for Practice Exam -> End-of-Course)
+                            onContinue();
+                          }}
+                          className="flex-1 group relative overflow-hidden bg-[#1a2f4a]/80 border-2 border-gray-500/40 hover:border-gray-400/60 text-gray-200 hover:text-white font-semibold py-3 px-4 md:py-4 md:px-6 rounded-xl text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] hover:bg-[#1a2f4a]"
+                        >
+                          <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
+                            Take End-Of-Course Exam
+                            <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                          </span>
+                        </button>
+                      )}
+                      {/* Chapter Quiz: No continue button when failed - must retake */}
+                    </div>
                   </div>
                 ) : (
                   // End-of-Course Exam: No retry, just show message
                   <div className="text-center">
                     <p className="text-gray-400 text-sm md:text-base mb-4">
-                      End-of-Course Exam does not allow retries. Please contact support if you need assistance.
+                      End-of-Course Exam does not allow retries. According to state law, you must wait 30 days before you can retake this exam.
                     </p>
                     <button
                       onClick={() => {

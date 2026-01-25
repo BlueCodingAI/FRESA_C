@@ -792,9 +792,6 @@ export default function ChapterPage() {
         />
         {!showRetryMessage && (
           <div className="relative z-10 min-h-screen flex flex-col items-center justify-center pt-20 pb-8 px-4 md:px-8 md:ml-64 md:pt-24">
-            <h1 className="text-3xl md:text-4xl font-bold text-center mb-8 text-white">
-              {chapterData ? `Chapter ${chapterData.number} Quiz` : `Chapter ${chapterNumber} Quiz`}
-            </h1>
             {quizQuestions.length > 0 ? (
               <Quiz 
                 key={quizRetryKey} // Force remount on retry
@@ -817,6 +814,7 @@ export default function ChapterPage() {
                 })()}
                 onContinueToNextChapter={handleContinueToNextChapter}
                 retryButtonText="Take the Quiz Again"
+                chapterNumber={chapterNumber}
               />
             ) : (
               <div className="text-white">No quiz questions available yet.</div>

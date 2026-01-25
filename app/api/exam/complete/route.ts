@@ -32,9 +32,9 @@ export async function POST(request: NextRequest) {
     })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-    // Only send email for End-of-Course Exam if passed (80%+)
+    // Only send email for End-of-Course Exam if passed (75%+)
     const percentage = total > 0 ? Math.round((score / total) * 100) : 0
-    const passed = percentage >= 80
+    const passed = percentage >= 75 // End-of-Course Exam passing score is 75%
     
     if (examType === 'end-of-course' && passed) {
       const notifyTo = process.env.ADMIN_NOTIFY_EMAIL
