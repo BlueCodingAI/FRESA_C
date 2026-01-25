@@ -678,6 +678,14 @@ export default function ChapterPage() {
     }
   };
 
+  const handleGoToPracticeExam = () => {
+    router.push("/practice-exam");
+  };
+
+  const handleGoToEndOfCourseExam = () => {
+    router.push("/end-of-course-exam");
+  };
+
   const currentSectionData = sections.find(s => s.id === currentSection);
   const currentIndex = sections.findIndex(s => s.id === currentSection);
 
@@ -795,8 +803,18 @@ export default function ChapterPage() {
                 searchHighlight={searchHighlight}
                 shuffle={true} // Always shuffle chapter quiz questions
                 onRetry={handleRetryQuiz}
-                // Don't pass onContinue for chapter quizzes - only for practice exam
-                onPracticeAgain={handlePracticeAgain}
+                // For last chapter: pass onContinue to show "Take End-Of-Course Exam" button
+                // For other chapters: don't pass onContinue (will show "Continue to Next Chapter")
+                onContinue={(() => {
+                  const maxChapterNumber = Math.max(...allChapters.filter(ch => ch.number > 0).map(ch => ch.number), 0);
+                  return chapterNumber === maxChapterNumber ? handleGoToEndOfCourseExam : undefined;
+                })()}
+                onPracticeAgain={(() => {
+                  const maxChapterNumber = Math.max(...allChapters.filter(ch => ch.number > 0).map(ch => ch.number), 0);
+                  // For last chapter: show "Take Practice Quiz Again" button
+                  // For other chapters: show "Take Another Practice Quiz" button
+                  return chapterNumber === maxChapterNumber ? handleGoToPracticeExam : handlePracticeAgain;
+                })()}
                 retryButtonText="Take the Quiz Again"
               />
             ) : (
