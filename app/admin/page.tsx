@@ -208,6 +208,22 @@ export default function AdminPage() {
             </p>
           </div>
 
+          {/* Additional Questions Editor */}
+          <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-green-500/20 p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 md:mb-4 gap-3">
+              <h2 className="text-lg md:text-xl font-bold text-white">Additional Questions</h2>
+              <Link
+                href="/admin/additional-questions"
+                className="px-3 py-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-green-500/50 transition-all duration-300 text-sm w-full sm:w-auto text-center"
+              >
+                Edit
+              </Link>
+            </div>
+            <p className="text-gray-400 text-xs md:text-sm">
+              Manage additional questions for Practice & End-of-Course Exams
+            </p>
+          </div>
+
           {/* Students */}
           <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-cyan-500/20 p-4 md:p-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 md:mb-4 gap-3">

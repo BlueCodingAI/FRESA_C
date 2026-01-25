@@ -21,6 +21,7 @@ model User {
 
   passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
+  progress                UserProgress[]
 }
 
 model PasswordResetToken {
@@ -107,6 +108,44 @@ model QuizQuestion {
 
   @@index([chapterId])
   @@index([quizType])
+}
+
+model UserProgress {
+  id            String   @id @default(cuid())
+  userId        String
+  chapterNumber Int
+  sectionId     String?  // Current section ID where user stopped
+  sectionNumber Int?     // Current section number
+  quizCompleted Boolean  @default(false) // Whether chapter quiz is completed with 80%+
+  quizScore     Int?     // Last quiz score
+  quizTotal     Int?     // Last quiz total
+  lastAccessed  DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chapterNumber])
+  @@index([userId])
+  @@index([chapterNumber])
+}
+
+model AdditionalQuestion {
+  id            String   @id @default(cuid())
+  question      String
+  options       String[] // Array of answer options
+  correctAnswer Int      // Index of correct answer (0-based)
+  explanation   Json     // { correct: string, incorrect: string[] }
+  questionAudioUrl String? // Audio URL for question text only
+  questionTimestampsUrl String? // Timestamps URL for question text only
+  optionAudioUrls Json? // Array of audio URLs for each option [string, string, ...]
+  optionTimestampsUrls Json? // Array of timestamps URLs for each option [string, string, ...]
+  correctExplanationAudioUrl String? // Audio URL for correct explanation
+  correctExplanationTimestampsUrl String? // Timestamps URL for correct explanation
+  incorrectExplanationAudioUrls Json? // Array of audio URLs for incorrect explanations [string, string, ...]
+  incorrectExplanationTimestampsUrls Json? // Array of timestamps URLs for incorrect explanations [string, string, ...]
+  order         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 enum UserRole {

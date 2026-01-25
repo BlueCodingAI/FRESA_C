@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import MrListings from "./MrListings";
 import AudioPlayer from "./AudioPlayer";
 import { highlightText, highlightTextHTML } from "@/lib/highlightText";
@@ -33,9 +33,20 @@ interface QuizProps {
   onComplete: (score: number, total: number) => void;
   showCharacter?: boolean;
   searchHighlight?: string; // Search query to highlight in questions and options
+  shuffle?: boolean; // Whether to shuffle questions
+  onRetry?: () => void; // Callback for retry action
+  onContinue?: () => void; // Callback for continue action
 }
 
-export default function Quiz({ questions, onComplete, showCharacter = true, searchHighlight }: QuizProps) {
+export default function Quiz({ questions, onComplete, showCharacter = true, searchHighlight, shuffle = false, onRetry, onContinue }: QuizProps) {
+  // Shuffle questions if shuffle prop is true - recalculate when shuffle changes
+  const shuffledQuestions = useMemo(() => {
+    if (shuffle) {
+      return [...questions].sort(() => Math.random() - 0.5);
+    }
+    return questions;
+  }, [questions, shuffle]);
+  
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -48,12 +59,14 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
   const [hasAutoPlayedExplanation, setHasAutoPlayedExplanation] = useState(false);
   const [currentOptionIndex, setCurrentOptionIndex] = useState<number>(-1); // -1 means playing question, >= 0 means playing option
   const [allQuestionAudioCompleted, setAllQuestionAudioCompleted] = useState(false); // Track if all question + option audio has finished
+  const [showResults, setShowResults] = useState(false); // Track if results screen should be shown
+  const [finalScore, setFinalScore] = useState(0); // Store final score for results screen
   const questionRef = useRef<HTMLDivElement>(null);
   const optionsRefs = useRef<(HTMLElement | null)[]>([]);
   const explanationRef = useRef<HTMLDivElement>(null);
 
-  const currentQuestion = questions[currentQuestionIndex];
-  const isLastQuestion = currentQuestionIndex === questions.length - 1;
+  const currentQuestion = shuffledQuestions[currentQuestionIndex];
+  const isLastQuestion = currentQuestionIndex === shuffledQuestions.length - 1;
 
   // Build question text (just the question, no options)
   const questionText = currentQuestion?.question || "";
@@ -366,6 +379,8 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
     });
   };
 
+  // Component will remount with new key on retry, so no need for reset logic here
+
   // Reset highlights and refs when question changes
   useEffect(() => {
     setHighlightedWord(null);
@@ -418,13 +433,12 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
 
   const handleNext = () => {
     if (isLastQuestion) {
-      // Show congratulations
+      // Score already includes the last question (added in handleSubmit)
+      // So we just use the current score as the final score
+      setFinalScore(score);
+      // Show results screen instead of immediately calling onComplete
+      setShowResults(true);
       setCharacterAnimation("congratulations");
-      setTimeout(() => {
-        // Calculate final score including current question
-        const finalScore = score + currentQuestionScore;
-        onComplete(finalScore, questions.length);
-      }, 2000);
     } else {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedAnswer(null);
@@ -435,6 +449,11 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
       setCurrentOptionIndex(-1); // Reset to question
       setHasAutoPlayedQuestion(false); // Reset for next question
     }
+  };
+
+  const handleViewResultsComplete = () => {
+    // Always call onComplete - parent will handle navigation or retry message
+    onComplete(finalScore, shuffledQuestions.length);
   };
   
   // Reset audio state when question changes
@@ -548,6 +567,161 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
     }
   };
 
+  // Show results screen if quiz is complete
+  if (showResults) {
+    const percentage = shuffledQuestions.length > 0 ? Math.round((finalScore / shuffledQuestions.length) * 100) : 0;
+    const passed = percentage >= 80;
+    
+    return (
+      <div className="w-full max-w-4xl mx-auto">
+        {/* Results Screen - Modern Professional Design */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-[#0f1b2e] via-[#1a2f4a] to-[#0f1b2e] border border-blue-500/20 rounded-3xl shadow-2xl backdrop-blur-xl">
+          {/* Decorative Background Elements */}
+          <div className="absolute inset-0 opacity-10">
+            <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500 rounded-full blur-3xl"></div>
+            <div className="absolute bottom-0 right-0 w-96 h-96 bg-cyan-500 rounded-full blur-3xl"></div>
+          </div>
+          
+          <div className="relative z-10 p-8 md:p-12">
+            {/* Character - Top Section */}
+            {showCharacter && (
+              <div className="flex justify-center mb-8">
+                <div className="relative">
+                  <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse"></div>
+                  <div className="relative">
+                    <MrListings size="medium" animation={characterAnimation} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Results Content */}
+            <div className="text-center mb-10">
+              {/* Title */}
+              <h2 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 mb-6 tracking-tight">
+                Quiz Complete!
+              </h2>
+              
+              {/* Score Card - Modern Design */}
+              <div className="inline-flex flex-col items-center mb-8">
+                <div className={`relative overflow-hidden rounded-2xl p-8 md:p-10 mb-4 ${
+                  passed 
+                    ? "bg-gradient-to-br from-green-500/20 via-emerald-500/20 to-green-500/20 border-2 border-green-400/50 shadow-lg shadow-green-500/20" 
+                    : "bg-gradient-to-br from-amber-500/20 via-yellow-500/20 to-amber-500/20 border-2 border-amber-400/50 shadow-lg shadow-amber-500/20"
+                }`}>
+                  {/* Animated Background */}
+                  <div className={`absolute inset-0 opacity-20 ${
+                    passed ? "bg-gradient-to-r from-green-400 to-emerald-400" : "bg-gradient-to-r from-amber-400 to-yellow-400"
+                  } animate-pulse`}></div>
+                  
+                  <div className="relative z-10">
+                    {/* Score Display */}
+                    <div className="text-6xl md:text-7xl font-black text-white mb-3 leading-none">
+                      <span className="text-blue-300">{finalScore}</span>
+                      <span className="text-gray-400 mx-2">/</span>
+                      <span className="text-gray-300">{shuffledQuestions.length}</span>
+                    </div>
+                    
+                    {/* Percentage Badge */}
+                    <div className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-lg md:text-xl font-bold ${
+                      passed 
+                        ? "bg-green-500/30 text-green-200 border border-green-400/50" 
+                        : "bg-amber-500/30 text-amber-200 border border-amber-400/50"
+                    }`}>
+                      <span className="text-2xl">{percentage}%</span>
+                      <span className="text-sm md:text-base">
+                        {passed ? "✓ Passed" : "Needs Improvement"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Message */}
+              <div className="max-w-2xl mx-auto">
+                <p className={`text-lg md:text-xl leading-relaxed ${
+                  passed 
+                    ? "text-green-100 font-medium" 
+                    : "text-gray-300 font-normal"
+                }`}>
+                  {passed 
+                    ? (
+                      <span className="inline-block">
+                        <span className="text-2xl mr-2">🎉</span>
+                        Congratulations! You've successfully passed the quiz and demonstrated your understanding of the material.
+                      </span>
+                    ) : (
+                      <span>
+                        Your score was <span className="font-bold text-white">{finalScore}</span> out of <span className="font-bold text-white">{shuffledQuestions.length}</span>, which is <span className="font-bold text-white">{percentage}%</span>. 
+                        <br className="hidden md:block" />
+                        Would you like to try taking the quiz again to better prepare for the End-Of-Course exam and Florida State Exam?
+                      </span>
+                    )}
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons - Modern Design */}
+            <div className="mt-10">
+              {passed ? (
+                <button
+                  onClick={handleViewResultsComplete}
+                  className="w-full group relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white font-bold py-3 px-4 md:py-5 md:px-8 rounded-xl text-sm md:text-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50"
+                >
+                  <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
+                    Continue to Next Chapter
+                    <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                    </svg>
+                  </span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                </button>
+              ) : (
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <button
+                    onClick={() => {
+                      // Call onRetry to trigger parent to reset quiz with new shuffle
+                      if (onRetry) {
+                        onRetry();
+                      }
+                    }}
+                    className="flex-1 group relative overflow-hidden bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-500 hover:from-blue-500 hover:via-cyan-400 hover:to-blue-400 text-white font-bold py-3 px-4 md:py-4 md:px-6 rounded-xl text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50"
+                  >
+                    <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
+                      <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:rotate-180 transition-transform duration-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Take the Quiz Again
+                    </span>
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                  </button>
+                  <button
+                    onClick={() => {
+                      // Call onComplete to trigger parent's continue logic
+                      if (onContinue) {
+                        onContinue();
+                      } else {
+                        handleViewResultsComplete();
+                      }
+                    }}
+                    className="flex-1 group relative overflow-hidden bg-[#1a2f4a]/80 border-2 border-gray-500/40 hover:border-gray-400/60 text-gray-200 hover:text-white font-semibold py-3 px-4 md:py-4 md:px-6 rounded-xl text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] hover:bg-[#1a2f4a]"
+                  >
+                    <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
+                      Continue to Next Chapter
+                      <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                      </svg>
+                    </span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full max-w-3xl mx-auto">
       {/* Progress Indicator - Modern Design */}
@@ -557,7 +731,7 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
             <div className="bg-blue-500/20 border border-blue-500/40 rounded-xl px-4 py-2 backdrop-blur-sm">
               <span className="text-blue-300 text-sm font-medium">Question</span>
               <span className="text-white text-lg font-bold ml-2">
-                {currentQuestionIndex + 1} <span className="text-blue-400">/</span> {questions.length}
+                {currentQuestionIndex + 1} <span className="text-blue-400">/</span> {shuffledQuestions.length}
               </span>
             </div>
           </div>
@@ -565,13 +739,13 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
             <div className="h-2 bg-[#0a1a2e] rounded-full overflow-hidden">
               <div 
                 className="h-full bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full transition-all duration-500 ease-out"
-                style={{ width: `${((currentQuestionIndex + 1) / questions.length) * 100}%` }}
+                style={{ width: `${((currentQuestionIndex + 1) / shuffledQuestions.length) * 100}%` }}
               />
             </div>
           </div>
           <div className="text-right">
             <div className="text-blue-300 text-sm font-medium">
-              {Math.round(((currentQuestionIndex + 1) / questions.length) * 100)}%
+              {Math.round(((currentQuestionIndex + 1) / shuffledQuestions.length) * 100)}%
             </div>
           </div>
         </div>

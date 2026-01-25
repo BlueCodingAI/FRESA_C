@@ -51,6 +51,10 @@ export default function ChapterPage() {
   const [activePlayingSectionId, setActivePlayingSectionId] = useState<string | null>(null);
   const [hasAutoPlayedFirst, setHasAutoPlayedFirst] = useState(false);
   const [allChapters, setAllChapters] = useState<any[]>([]);
+  const [userProgress, setUserProgress] = useState<any>(null);
+  const [showRetryMessage, setShowRetryMessage] = useState(false);
+  const [quizShuffle, setQuizShuffle] = useState(false);
+  const [quizRetryKey, setQuizRetryKey] = useState(0); // Key to force quiz reset on retry
 
   useEffect(() => {
     console.log('[ChapterPage] Mounted with chapterNumber:', chapterNumber);
@@ -63,6 +67,7 @@ export default function ChapterPage() {
     console.log('[ChapterPage] Fetching data for chapter:', chapterNumber);
     fetchAllChapters();
     fetchChapterData();
+    fetchUserProgress();
     
     // Check for search highlight query from search results
     const searchQuery = sessionStorage.getItem('searchHighlight');
@@ -138,8 +143,15 @@ export default function ChapterPage() {
         
         setSections(dbSections);
         
-        if (dbSections.length > 0 && !currentSection) {
-          setCurrentSection(dbSections[0].id);
+        // Load progress after sections are loaded
+        if (dbSections.length > 0) {
+          // Wait a bit for progress to load, then set section
+          setTimeout(() => {
+            if (!currentSection) {
+              // If no progress saved, start from first section
+              setCurrentSection(dbSections[0].id);
+            }
+          }, 100);
         }
         
         const targetSection = sessionStorage.getItem('targetSection');
@@ -248,6 +260,82 @@ export default function ChapterPage() {
     }
   };
 
+  const fetchUserProgress = async () => {
+    if (!chapterNumber) return;
+    
+    try {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("auth-token="))
+        ?.split("=")[1];
+
+      if (!token) {
+        // Not logged in, no progress to load
+        return;
+      }
+
+      const response = await fetch("/api/progress", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const chapterProgress = data.progress.find(
+          (p: any) => p.chapterNumber === chapterNumber
+        );
+        
+        if (chapterProgress) {
+          setUserProgress(chapterProgress);
+          
+          // Resume from saved section if available
+          if (chapterProgress.sectionId && sections.length > 0) {
+            const sectionExists = sections.some(s => s.id === chapterProgress.sectionId);
+            if (sectionExists) {
+              setCurrentSection(chapterProgress.sectionId);
+            } else if (sections.length > 0) {
+              setCurrentSection(sections[0].id);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching user progress:", err);
+    }
+  };
+
+  const saveProgress = async (sectionId?: string, sectionNumber?: number) => {
+    if (!chapterNumber) return;
+    
+    try {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("auth-token="))
+        ?.split("=")[1];
+
+      if (!token) {
+        // Not logged in, can't save progress
+        return;
+      }
+
+      await fetch("/api/progress", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          chapterNumber,
+          sectionId: sectionId || currentSection,
+          sectionNumber: sectionNumber !== undefined ? sectionNumber : currentIndex + 1,
+        }),
+      });
+    } catch (err) {
+      console.error("Error saving progress:", err);
+    }
+  };
+
   const menuItems = useMemo(() => {
     const items: Array<{ 
       id: string; 
@@ -302,9 +390,26 @@ export default function ChapterPage() {
 
   const handleNext = () => {
     const currentIndex = sections.findIndex(s => s.id === currentSection);
+    
+    // Check if we need to complete quiz before moving to next section
     if (currentIndex < sections.length - 1) {
+      // Check if quiz is required and completed
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("auth-token="))
+        ?.split("=")[1];
+      
+      if (token && userProgress && !userProgress.quizCompleted) {
+        // Quiz not completed, show quiz first
+        setShowQuiz(true);
+        return;
+      }
+      
+      // Save progress before moving to next section
+      saveProgress(sections[currentIndex + 1].id, currentIndex + 2);
       setCurrentSection(sections[currentIndex + 1].id);
     } else {
+      // Last section, show quiz
       setShowQuiz(true);
     }
   };
@@ -326,21 +431,11 @@ export default function ChapterPage() {
     }
   };
 
-  const handleQuizComplete = (score: number, total: number) => {
+  const handleQuizComplete = async (score: number, total: number) => {
     if (!chapterNumber) return;
     
-    const progress = {
-      chapter: chapterNumber,
-      section: "complete",
-      score,
-      total,
-      completed: true,
-      timestamp: new Date().toISOString(),
-    };
-    localStorage.setItem(`chapter${chapterNumber}Progress`, JSON.stringify(progress));
-    
-    // Store chapter number for congratulations page
-    sessionStorage.setItem('completedChapter', chapterNumber.toString());
+    const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
+    const passed = percentage >= 80;
     
     const token = document.cookie
       .split("; ")
@@ -348,10 +443,33 @@ export default function ChapterPage() {
       ?.split("=")[1];
     
     if (!token) {
+      // Not logged in - show registration prompt
       setQuizScore({ score, total });
       setShowRegistrationPrompt(true);
-    } else {
-      // Send admin notification email (best-effort)
+      return;
+    }
+    
+    // Save quiz result to progress
+    try {
+      await fetch("/api/progress", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          chapterNumber,
+          quizCompleted: passed,
+          quizScore: score,
+          quizTotal: total,
+        }),
+      });
+    } catch (err) {
+      console.error("Error saving quiz progress:", err);
+    }
+    
+    if (passed) {
+      // Quiz passed - send notification and continue
       fetch("/api/quiz/complete", {
         method: "POST",
         headers: {
@@ -361,7 +479,56 @@ export default function ChapterPage() {
         body: JSON.stringify({ chapterNumber, score, total }),
         credentials: "include",
       }).catch(() => {});
-      router.push(`/congratulations?chapter=${chapterNumber}`);
+      
+      // Update local progress state
+      setUserProgress((prev: any) => ({
+        ...prev,
+        quizCompleted: true,
+        quizScore: score,
+        quizTotal: total,
+      }));
+      
+      // Navigate to next chapter or practice exam
+      const nextChapter = chapterNumber + 1;
+      if (nextChapter <= 19) {
+        router.push(`/chapter/${nextChapter}`);
+      } else {
+        // All chapters completed - go to practice exam
+        router.push("/practice-exam");
+      }
+    } else {
+      // Quiz failed - retry options are now shown in the Quiz component's results screen
+      // No need to show separate retry message modal
+      setQuizScore({ score, total });
+      // Keep quiz visible so results screen with retry options stays visible
+      setShowRetryMessage(false); // Ensure retry message modal doesn't show
+    }
+  };
+  
+  const handleRetryQuiz = () => {
+    setShowRetryMessage(false);
+    // Increment retry key to force quiz component to remount with completely fresh state
+    setQuizRetryKey(prev => prev + 1);
+    // Set shuffle to true for the new instance to get randomized questions
+    setQuizShuffle(true);
+  };
+  
+  // Reset shuffle when quiz is closed (but not during retry)
+  useEffect(() => {
+    if (!showQuiz && quizShuffle && quizRetryKey === 0) {
+      // Only reset shuffle if quiz is closed and we haven't retried
+      setQuizShuffle(false);
+    }
+  }, [showQuiz, quizShuffle, quizRetryKey]);
+  
+  const handleContinueToNextChapter = () => {
+    setShowRetryMessage(false);
+    const nextChapter = chapterNumber! + 1;
+    if (nextChapter <= 19) {
+      router.push(`/chapter/${nextChapter}`);
+    } else {
+      // All chapters completed - go to practice exam
+      router.push("/practice-exam");
     }
   };
 
@@ -389,6 +556,11 @@ export default function ChapterPage() {
   useEffect(() => {
     if (!loading && sections.length > 0 && currentSection) {
       setHasAutoPlayedFirst(false);
+      // Save progress when section changes
+      const currentIndex = sections.findIndex(s => s.id === currentSection);
+      if (currentIndex >= 0) {
+        saveProgress(currentSection, currentIndex + 1);
+      }
     }
   }, [currentSection, sections, loading]);
 
@@ -404,16 +576,26 @@ export default function ChapterPage() {
         <Header />
         <StarsBackground />
         <TableOfContents items={menuItems} currentPath={chapterPath} activeSectionId={activePlayingSectionId || undefined} />
-        <div className="relative z-10 min-h-screen flex flex-col items-center justify-center pt-20 pb-8 px-4 md:px-8 md:ml-64 md:pt-24">
-          <h1 className="text-3xl md:text-4xl font-bold text-center mb-8 text-white">
-            {chapterData ? `Chapter ${chapterData.number} Quiz` : `Chapter ${chapterNumber} Quiz`}
-          </h1>
-          {quizQuestions.length > 0 ? (
-            <Quiz questions={quizQuestions} onComplete={handleQuizComplete} searchHighlight={searchHighlight} />
-          ) : (
-            <div className="text-white">No quiz questions available yet.</div>
-          )}
-        </div>
+        {!showRetryMessage && (
+          <div className="relative z-10 min-h-screen flex flex-col items-center justify-center pt-20 pb-8 px-4 md:px-8 md:ml-64 md:pt-24">
+            <h1 className="text-3xl md:text-4xl font-bold text-center mb-8 text-white">
+              {chapterData ? `Chapter ${chapterData.number} Quiz` : `Chapter ${chapterNumber} Quiz`}
+            </h1>
+            {quizQuestions.length > 0 ? (
+              <Quiz 
+                key={quizRetryKey} // Force remount on retry
+                questions={quizQuestions} 
+                onComplete={handleQuizComplete} 
+                searchHighlight={searchHighlight}
+                shuffle={quizShuffle}
+                onRetry={handleRetryQuiz}
+                onContinue={handleContinueToNextChapter}
+              />
+            ) : (
+              <div className="text-white">No quiz questions available yet.</div>
+            )}
+          </div>
+        )}
         {showRegistrationPrompt && quizScore && (
           <RegistrationPrompt
             score={quizScore.score}
@@ -434,6 +616,7 @@ export default function ChapterPage() {
             }}
           />
         )}
+        {/* Retry message is now shown in Quiz component's results screen, so this modal is no longer needed */}
       </main>
     );
   }
