@@ -131,7 +131,7 @@ export default function UserMenu() {
         </div>
         <div className="text-left hidden sm:block">
           <div className="text-white text-xs font-medium leading-tight">{user.name}</div>
-          <div className="text-cyan-400 text-[10px] leading-tight">{user.role}</div>
+          <div className="text-cyan-400 text-[10px] leading-tight">{user.role === "Student" ? "RE Ninja 🥷" : user.role}</div>
         </div>
         <div className="text-left sm:hidden">
           <div className="text-white text-xs font-medium">{user.name.split(' ')[0]}</div>
@@ -168,7 +168,7 @@ export default function UserMenu() {
                 <div className="flex-1 min-w-0">
                   <div className="text-white font-medium truncate">{user.name}</div>
                   <div className="text-gray-400 text-sm truncate">{user.email}</div>
-                  <div className="text-cyan-400 text-xs mt-1">{user.role}</div>
+                  <div className="text-cyan-400 text-xs mt-1">{user.role === "Student" ? "RE Ninja 🥷" : user.role}</div>
                 </div>
               </div>
             </div>

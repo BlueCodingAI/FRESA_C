@@ -298,7 +298,7 @@ export default function ProfilePage() {
                       <div>
                         <h2 className="text-2xl font-bold text-white">{user?.name}</h2>
                         <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${getRoleColor(user?.role || "Student")} text-white`}>
-                          {user?.role}
+                          {user?.role === "Student" ? "RE Ninja 🥷" : user?.role}
                         </span>
                       </div>
                     </div>
