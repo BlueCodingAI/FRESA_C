@@ -312,7 +312,17 @@ export default function ChapterPage() {
   const handlePrevious = () => {
     const currentIndex = sections.findIndex(s => s.id === currentSection);
     if (currentIndex > 0) {
+      // Navigate to previous section within the same chapter
       setCurrentSection(sections[currentIndex - 1].id);
+    } else if (currentIndex === 0 && chapterNumber) {
+      // On first section - navigate to previous page
+      if (chapterNumber === 1) {
+        // If Chapter 1, go to introduction
+        router.push("/introduction");
+      } else {
+        // Otherwise, go to previous chapter
+        router.push(`/chapter/${chapterNumber - 1}`);
+      }
     }
   };
 
@@ -541,8 +551,7 @@ export default function ChapterPage() {
             <div className="flex gap-4 mt-6">
               <button
                 onClick={handlePrevious}
-                disabled={currentIndex === 0}
-                className="flex-1 bg-gray-700 hover:bg-gray-600 disabled:bg-gray-800 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
+                className="flex-1 bg-gray-700 hover:bg-gray-600 text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200"
               >
                 Previous
               </button>
