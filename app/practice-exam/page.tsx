@@ -11,9 +11,7 @@ export default function PracticeExamPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [showRetryMessage, setShowRetryMessage] = useState(false);
-  const [quizScore, setQuizScore] = useState<{ score: number; total: number } | null>(null);
-  const [showQuiz, setShowQuiz] = useState(true);
+  const [quizRetryKey, setQuizRetryKey] = useState(0);
 
   useEffect(() => {
     fetchQuestions();
@@ -42,13 +40,12 @@ export default function PracticeExamPage() {
 
       if (response.ok) {
         const data = await response.json();
-        // Get 100 random questions
+        // Questions are already shuffled and selected based on per-chapter settings
+        // Just use all questions returned (they're already randomized)
         const allQuestions = data.questions || [];
-        const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
-        const selectedQuestions = shuffled.slice(0, 100);
         
         // Convert to QuizQuestion format
-        const formattedQuestions: QuizQuestion[] = selectedQuestions.map((q: any) => ({
+        const formattedQuestions: QuizQuestion[] = allQuestions.map((q: any) => ({
           id: q.id,
           question: q.question,
           options: q.options,
@@ -65,41 +62,38 @@ export default function PracticeExamPage() {
         }));
         
         setQuestions(formattedQuestions);
+        setLoading(false);
       } else {
         console.error("Failed to fetch exam questions");
+        setLoading(false);
       }
     } catch (err) {
       console.error("Error fetching exam questions:", err);
-    } finally {
       setLoading(false);
     }
   };
 
   const handleQuizComplete = async (score: number, total: number) => {
-    const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
-    const passed = percentage >= 80;
-
-    if (passed) {
-      // Passed - can proceed to End-of-Course Exam
-      router.push("/end-of-course-exam");
-    } else {
-      // Failed - show retry message
-      setQuizScore({ score, total });
-      setShowRetryMessage(true);
-      setShowQuiz(false);
-    }
+    // Don't auto-navigate - Quiz component will show results with proper options
+    // For Practice Exam: both pass and fail show options in Quiz component
   };
 
   const handleRetry = () => {
-    setShowRetryMessage(false);
-    // Fetch new random questions
+    // Increment retry key to force quiz component to remount with new questions
+    setQuizRetryKey(prev => prev + 1);
+    // Fetch new random questions for Practice Exam retry
     fetchQuestions();
-    setShowQuiz(true);
   };
 
   const handleGoToEndOfCourse = () => {
-    setShowRetryMessage(false);
+    // Navigate to End-of-Course Exam from Practice Exam
     router.push("/end-of-course-exam");
+  };
+
+  const handlePracticeAgain = () => {
+    // User wants to take another practice exam
+    setQuizRetryKey(prev => prev + 1);
+    fetchQuestions();
   };
 
   if (loading) {
@@ -122,38 +116,22 @@ export default function PracticeExamPage() {
         <Header />
         <StarsBackground />
         <div className="relative z-10 min-h-screen flex flex-col items-center justify-center pt-20 pb-8 px-4 md:px-8">
-          {showQuiz && questions.length > 0 && (
+          {questions.length > 0 && (
             <>
               <h1 className="text-3xl md:text-4xl font-bold text-center mb-8 text-white">
                 Practice Exam
               </h1>
-              <Quiz questions={questions} onComplete={handleQuizComplete} shuffle={true} />
+              <Quiz 
+                key={quizRetryKey}
+                questions={questions} 
+                onComplete={handleQuizComplete} 
+                shuffle={true}
+                onRetry={handleRetry}
+                onContinue={handleGoToEndOfCourse}
+                onPracticeAgain={handlePracticeAgain}
+                retryButtonText="Take Practice Quiz Again"
+              />
             </>
-          )}
-          
-          {showRetryMessage && quizScore && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <div className="bg-[#1a1f3a] rounded-2xl border border-yellow-500/30 p-6 md:p-8 max-w-md w-full">
-                <h2 className="text-2xl font-bold text-white mb-4">Practice Exam Results</h2>
-                <p className="text-gray-300 mb-6">
-                  Your score was {quizScore.score} out of {quizScore.total}, which is {Math.round((quizScore.score / quizScore.total) * 100)}%.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <button
-                    onClick={handleRetry}
-                    className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition-all"
-                  >
-                    Take Practice Quiz Again
-                  </button>
-                  <button
-                    onClick={handleGoToEndOfCourse}
-                    className="flex-1 px-4 py-3 bg-[#0a0e27]/50 border border-gray-500/30 rounded-lg text-gray-300 hover:bg-[#0a0e27]/70 transition-all"
-                  >
-                    Take End-Of-Course Exam
-                  </button>
-                </div>
-              </div>
-            </div>
           )}
         </div>
       </main>

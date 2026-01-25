@@ -18,10 +18,12 @@ export default function IntroductionPage() {
   const [loading, setLoading] = useState(true);
   const [searchHighlight, setSearchHighlight] = useState<string>("");
   const [allChapters, setAllChapters] = useState<any[]>([]);
+  const [allUserProgress, setAllUserProgress] = useState<any[]>([]); // All chapters' progress
 
   useEffect(() => {
     fetchIntroduction();
     fetchAllChapters();
+    fetchUserProgress();
     
     // Check for search highlight query
     const searchQuery = sessionStorage.getItem('searchHighlight');
@@ -33,6 +35,33 @@ export default function IntroductionPage() {
       }, 5000); // Clear after 5 seconds
     }
   }, []);
+
+  const fetchUserProgress = async () => {
+    try {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("auth-token="))
+        ?.split("=")[1];
+
+      if (!token) {
+        // Not logged in, no progress to load
+        return;
+      }
+
+      const response = await fetch("/api/progress", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAllUserProgress(data.progress || []);
+      }
+    } catch (err) {
+      console.error("Error fetching user progress:", err);
+    }
+  };
 
   const fetchIntroduction = async () => {
     try {
@@ -111,7 +140,12 @@ export default function IntroductionPage() {
         <StarsBackground />
 
       {/* Table of Contents */}
-      <TableOfContents items={menuItems} currentPath="/introduction" />
+      <TableOfContents 
+        items={menuItems} 
+        currentPath="/introduction"
+        allUserProgress={allUserProgress}
+        currentChapterNumber={0}
+      />
 
       {/* Concentric circles */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] md:w-[600px] md:h-[600px] pointer-events-none">

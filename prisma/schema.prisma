@@ -148,6 +148,33 @@ model AdditionalQuestion {
   updatedAt     DateTime @updatedAt
 }
 
+model Settings {
+  id        String   @id @default("main")
+  examQuestionCount Int      @default(100) // Number of questions for Practice and End-of-Course exams
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ChapterQuizSettings {
+  id        String   @id @default(cuid())
+  chapterNumber Int      @unique
+  questionCount  Int      @default(10) // Number of random questions for this chapter's quiz
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([chapterNumber])
+}
+
+model ExamChapterSettings {
+  id        String   @id @default(cuid())
+  chapterNumber Int      @unique
+  questionCount  Int      @default(5) // Number of questions from this chapter in Practice/Final exams
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([chapterNumber])
+}
+
 enum UserRole {
   Admin
   Developer

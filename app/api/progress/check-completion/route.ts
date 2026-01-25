@@ -30,15 +30,16 @@ export async function GET(request: NextRequest) {
       select: { chapterNumber: true, quizCompleted: true },
     })
 
-    // Check if all chapters (1-19) are completed
-    const allChaptersCompleted = chapters.every((chapter) => {
+    // Check if all chapters are completed (excluding chapter 0 which is introduction)
+    const chaptersToCheck = chapters.filter(ch => ch.number > 0);
+    const allChaptersCompleted = chaptersToCheck.every((chapter) => {
       const chapterProgress = progress.find((p) => p.chapterNumber === chapter.number)
       return chapterProgress?.quizCompleted === true
     })
 
     return NextResponse.json({ 
       allCompleted: allChaptersCompleted,
-      totalChapters: chapters.length,
+      totalChapters: chaptersToCheck.length, // Only count chapters > 0
       completedChapters: progress.filter((p) => p.quizCompleted).length,
     })
   } catch (error: any) {

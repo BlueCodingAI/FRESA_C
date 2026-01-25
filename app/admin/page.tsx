@@ -31,11 +31,173 @@ export default function AdminPage() {
   const [error, setError] = useState("");
   const [editingChapterNumber, setEditingChapterNumber] = useState<string | null>(null);
   const [chapterNumberInput, setChapterNumberInput] = useState<{ [key: string]: number }>({});
+  const [chapterQuizSettings, setChapterQuizSettings] = useState<{ [key: number]: number }>({});
+  const [examChapterSettings, setExamChapterSettings] = useState<{ [key: number]: number }>({});
+  const [editingChapterQuiz, setEditingChapterQuiz] = useState<number | null>(null);
+  const [editingExamChapter, setEditingExamChapter] = useState<number | null>(null);
+  const [chapterQuizInput, setChapterQuizInput] = useState<{ [key: number]: number }>({});
+  const [examChapterInput, setExamChapterInput] = useState<{ [key: number]: number }>({});
 
   useEffect(() => {
     checkAuth();
     fetchChapters();
+    fetchChapterQuizSettings();
+    fetchExamChapterSettings();
   }, []);
+
+  const fetchChapterQuizSettings = async () => {
+    try {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("auth-token="))
+        ?.split("=")[1];
+
+      if (!token) {
+        return;
+      }
+
+      const response = await fetch("/api/admin/chapter-quiz-settings", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const settingsMap: { [key: number]: number } = {};
+        (data.settings || []).forEach((s: any) => {
+          settingsMap[s.chapterNumber] = s.questionCount;
+        });
+        setChapterQuizSettings(settingsMap);
+        setChapterQuizInput(settingsMap);
+      }
+    } catch (err) {
+      console.error("Error fetching chapter quiz settings:", err);
+    }
+  };
+
+  const fetchExamChapterSettings = async () => {
+    try {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("auth-token="))
+        ?.split("=")[1];
+
+      if (!token) {
+        return;
+      }
+
+      const response = await fetch("/api/admin/exam-chapter-settings", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        const settingsMap: { [key: number]: number } = {};
+        (data.settings || []).forEach((s: any) => {
+          settingsMap[s.chapterNumber] = s.questionCount;
+        });
+        setExamChapterSettings(settingsMap);
+        setExamChapterInput(settingsMap);
+      }
+    } catch (err) {
+      console.error("Error fetching exam chapter settings:", err);
+    }
+  };
+
+  const handleSaveChapterQuizCount = async (chapterNumber: number) => {
+    const count = chapterQuizInput[chapterNumber];
+    if (!count || count < 1) {
+      alert("Question count must be at least 1");
+      return;
+    }
+
+    try {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("auth-token="))
+        ?.split("=")[1];
+
+      if (!token) {
+        alert("Not authenticated");
+        return;
+      }
+
+      const response = await fetch("/api/admin/chapter-quiz-settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          chapterNumber,
+          questionCount: count,
+        }),
+      });
+
+      if (response.ok) {
+        setChapterQuizSettings({ ...chapterQuizSettings, [chapterNumber]: count });
+        setEditingChapterQuiz(null);
+        await fetchChapterQuizSettings();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        alert(`Error: ${errorData.error || "Failed to update setting"}`);
+      }
+    } catch (err) {
+      console.error("Error updating chapter quiz setting:", err);
+      alert("Failed to update setting");
+    }
+  };
+
+  const handleSaveExamChapterCount = async (chapterNumber: number) => {
+    const count = examChapterInput[chapterNumber] || 0;
+    if (count < 0) {
+      alert("Question count cannot be negative");
+      return;
+    }
+
+    try {
+      const token = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("auth-token="))
+        ?.split("=")[1];
+
+      if (!token) {
+        alert("Not authenticated");
+        return;
+      }
+
+      const response = await fetch("/api/admin/exam-chapter-settings", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          chapterNumber,
+          questionCount: count,
+        }),
+      });
+
+      if (response.ok) {
+        setExamChapterSettings({ ...examChapterSettings, [chapterNumber]: count });
+        setEditingExamChapter(null);
+        await fetchExamChapterSettings();
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        alert(`Error: ${errorData.error || "Failed to update setting"}`);
+      }
+    } catch (err) {
+      console.error("Error updating exam chapter setting:", err);
+      alert("Failed to update setting");
+    }
+  };
 
   const checkAuth = async () => {
     try {
@@ -290,22 +452,6 @@ export default function AdminPage() {
             </p>
           </div>
 
-          {/* Eligibility Quiz Editor */}
-          <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-orange-500/20 p-4 md:p-6">
-            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 md:mb-4 gap-3">
-              <h2 className="text-lg md:text-xl font-bold text-white">Eligibility Quiz</h2>
-              <Link
-                href="/admin/eligibility"
-                className="px-3 py-2 bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-orange-500/50 transition-all duration-300 text-sm w-full sm:w-auto text-center"
-              >
-                Edit
-              </Link>
-            </div>
-            <p className="text-gray-400 text-xs md:text-sm">
-              Manage eligibility quiz questions
-            </p>
-          </div>
-
           {/* Additional Questions Editor */}
           <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-green-500/20 p-4 md:p-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 md:mb-4 gap-3">
@@ -320,6 +466,144 @@ export default function AdminPage() {
             <p className="text-gray-400 text-xs md:text-sm">
               Manage additional questions for Practice & End-of-Course Exams
             </p>
+          </div>
+
+          {/* Chapter Quiz Settings */}
+          <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-blue-500/20 p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 md:mb-4 gap-3">
+              <h2 className="text-lg md:text-xl font-bold text-white">Chapter Quiz Settings</h2>
+            </div>
+            <p className="text-gray-400 text-xs md:text-sm mb-4">
+              Set number of random questions for each chapter's quiz
+            </p>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {chapters.filter(ch => ch.number > 0).map((chapter) => (
+                <div key={chapter.id} className="flex items-center justify-between gap-2 p-2 bg-[#0a0e27]/50 rounded">
+                  <span className="text-gray-300 text-xs md:text-sm flex-1">
+                    Chapter {chapter.number}
+                  </span>
+                  {editingChapterQuiz === chapter.number ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min="1"
+                        value={chapterQuizInput[chapter.number] || 10}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (!isNaN(value) && value > 0) {
+                            setChapterQuizInput({ ...chapterQuizInput, [chapter.number]: value });
+                          }
+                        }}
+                        className="w-16 px-2 py-1 bg-[#0a0e27] border border-blue-500/50 rounded text-white text-xs font-semibold focus:outline-none focus:border-blue-500"
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => handleSaveChapterQuizCount(chapter.number)}
+                        className="px-1.5 py-0.5 bg-green-500/20 border border-green-500/50 rounded text-green-400 hover:bg-green-500/30 text-xs transition-all"
+                        title="Save"
+                      >
+                        ✓
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingChapterQuiz(null);
+                          setChapterQuizInput({ ...chapterQuizInput, [chapter.number]: chapterQuizSettings[chapter.number] || 10 });
+                        }}
+                        className="px-1.5 py-0.5 bg-red-500/20 border border-red-500/50 rounded text-red-400 hover:bg-red-500/30 text-xs transition-all"
+                        title="Cancel"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <span className="text-white text-xs font-semibold w-8 text-right">
+                        {chapterQuizSettings[chapter.number] || 10}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setEditingChapterQuiz(chapter.number);
+                          setChapterQuizInput({ ...chapterQuizInput, [chapter.number]: chapterQuizSettings[chapter.number] || 10 });
+                        }}
+                        className="px-1.5 py-0.5 bg-blue-500/20 border border-blue-500/50 rounded text-blue-400 hover:bg-blue-500/30 text-xs transition-all"
+                        title="Edit"
+                      >
+                        ✏️
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Exam Chapter Settings */}
+          <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-purple-500/20 p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 md:mb-4 gap-3">
+              <h2 className="text-lg md:text-xl font-bold text-white">Practice & Final Exam Settings</h2>
+            </div>
+            <p className="text-gray-400 text-xs md:text-sm mb-4">
+              Set number of questions from each chapter for Practice and End-of-Course exams
+            </p>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {chapters.filter(ch => ch.number > 0).map((chapter) => (
+                <div key={chapter.id} className="flex items-center justify-between gap-2 p-2 bg-[#0a0e27]/50 rounded">
+                  <span className="text-gray-300 text-xs md:text-sm flex-1">
+                    Chapter {chapter.number}
+                  </span>
+                  {editingExamChapter === chapter.number ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        min="0"
+                        value={examChapterInput[chapter.number] || 0}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value);
+                          if (!isNaN(value) && value >= 0) {
+                            setExamChapterInput({ ...examChapterInput, [chapter.number]: value });
+                          }
+                        }}
+                        className="w-16 px-2 py-1 bg-[#0a0e27] border border-purple-500/50 rounded text-white text-xs font-semibold focus:outline-none focus:border-purple-500"
+                        autoFocus
+                      />
+                      <button
+                        onClick={() => handleSaveExamChapterCount(chapter.number)}
+                        className="px-1.5 py-0.5 bg-green-500/20 border border-green-500/50 rounded text-green-400 hover:bg-green-500/30 text-xs transition-all"
+                        title="Save"
+                      >
+                        ✓
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingExamChapter(null);
+                          setExamChapterInput({ ...examChapterInput, [chapter.number]: examChapterSettings[chapter.number] || 0 });
+                        }}
+                        className="px-1.5 py-0.5 bg-red-500/20 border border-red-500/50 rounded text-red-400 hover:bg-red-500/30 text-xs transition-all"
+                        title="Cancel"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1">
+                      <span className="text-white text-xs font-semibold w-8 text-right">
+                        {examChapterSettings[chapter.number] || 0}
+                      </span>
+                      <button
+                        onClick={() => {
+                          setEditingExamChapter(chapter.number);
+                          setExamChapterInput({ ...examChapterInput, [chapter.number]: examChapterSettings[chapter.number] || 0 });
+                        }}
+                        className="px-1.5 py-0.5 bg-purple-500/20 border border-purple-500/50 rounded text-purple-400 hover:bg-purple-500/30 text-xs transition-all"
+                        title="Edit"
+                      >
+                        ✏️
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
 
           {/* Students */}

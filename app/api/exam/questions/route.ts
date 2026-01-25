@@ -18,69 +18,89 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    // Fetch all chapter questions
-    const chapterQuestions = await prisma.quizQuestion.findMany({
-      where: {
-        quizType: 'chapter',
-        chapterId: { not: null },
-      },
-      include: {
-        chapter: {
-          select: {
-            number: true,
-            title: true,
-          },
-        },
-      },
-      orderBy: [
-        { chapter: { number: 'asc' } },
-        { order: 'asc' },
-      ],
+    // Get exam chapter settings (how many questions from each chapter)
+    const examChapterSettings = await prisma.examChapterSettings.findMany({
+      orderBy: { chapterNumber: 'asc' },
     })
+
+    // Get all chapters
+    const chapters = await prisma.chapter.findMany({
+      where: { number: { gt: 0 } }, // Exclude chapter 0 (introduction)
+      orderBy: { number: 'asc' },
+    })
+
+    // Build questions array based on per-chapter settings
+    const selectedQuestions: any[] = []
+
+    // For each chapter, get the specified number of random questions
+    for (const chapter of chapters) {
+      const setting = examChapterSettings.find(s => s.chapterNumber === chapter.number)
+      const questionCount = setting?.questionCount || 0
+
+      if (questionCount > 0) {
+        // Fetch all questions for this chapter
+        const chapterQuestions = await prisma.quizQuestion.findMany({
+          where: {
+            chapterId: chapter.id,
+            quizType: 'chapter',
+          },
+          orderBy: { order: 'asc' },
+        })
+
+        // Shuffle and select the required number
+        const shuffled = [...chapterQuestions].sort(() => Math.random() - 0.5)
+        const selected = shuffled.slice(0, Math.min(questionCount, chapterQuestions.length))
+
+        selectedQuestions.push(...selected.map((q) => ({
+          id: q.id,
+          question: q.question,
+          options: q.options,
+          correctAnswer: q.correctAnswer,
+          explanation: q.explanation,
+          questionAudioUrl: q.questionAudioUrl,
+          questionTimestampsUrl: q.questionTimestampsUrl,
+          optionAudioUrls: q.optionAudioUrls,
+          optionTimestampsUrls: q.optionTimestampsUrls,
+          correctExplanationAudioUrl: q.correctExplanationAudioUrl,
+          correctExplanationTimestampsUrl: q.correctExplanationTimestampsUrl,
+          incorrectExplanationAudioUrls: q.incorrectExplanationAudioUrls,
+          incorrectExplanationTimestampsUrls: q.incorrectExplanationTimestampsUrls,
+          source: 'chapter',
+          chapterNumber: chapter.number,
+        })))
+      }
+    }
 
     // Fetch additional questions
     const additionalQuestions = await prisma.additionalQuestion.findMany({
       orderBy: { order: 'asc' },
     })
 
-    // Combine and format questions
-    const allQuestions = [
-      ...chapterQuestions.map((q) => ({
-        id: q.id,
-        question: q.question,
-        options: q.options,
-        correctAnswer: q.correctAnswer,
-        explanation: q.explanation,
-        questionAudioUrl: q.questionAudioUrl,
-        questionTimestampsUrl: q.questionTimestampsUrl,
-        optionAudioUrls: q.optionAudioUrls,
-        optionTimestampsUrls: q.optionTimestampsUrls,
-        correctExplanationAudioUrl: q.correctExplanationAudioUrl,
-        correctExplanationTimestampsUrl: q.correctExplanationTimestampsUrl,
-        incorrectExplanationAudioUrls: q.incorrectExplanationAudioUrls,
-        incorrectExplanationTimestampsUrls: q.incorrectExplanationTimestampsUrls,
-        source: 'chapter',
-        chapterNumber: q.chapter?.number,
-      })),
-      ...additionalQuestions.map((q) => ({
-        id: q.id,
-        question: q.question,
-        options: q.options,
-        correctAnswer: q.correctAnswer,
-        explanation: q.explanation,
-        questionAudioUrl: q.questionAudioUrl,
-        questionTimestampsUrl: q.questionTimestampsUrl,
-        optionAudioUrls: q.optionAudioUrls,
-        optionTimestampsUrls: q.optionTimestampsUrls,
-        correctExplanationAudioUrl: q.correctExplanationAudioUrl,
-        correctExplanationTimestampsUrl: q.correctExplanationTimestampsUrl,
-        incorrectExplanationAudioUrls: q.incorrectExplanationAudioUrls,
-        incorrectExplanationTimestampsUrls: q.incorrectExplanationTimestampsUrls,
-        source: 'additional',
-      })),
-    ]
+    // Add all additional questions
+    selectedQuestions.push(...additionalQuestions.map((q) => ({
+      id: q.id,
+      question: q.question,
+      options: q.options,
+      correctAnswer: q.correctAnswer,
+      explanation: q.explanation,
+      questionAudioUrl: q.questionAudioUrl,
+      questionTimestampsUrl: q.questionTimestampsUrl,
+      optionAudioUrls: q.optionAudioUrls,
+      optionTimestampsUrls: q.optionTimestampsUrls,
+      correctExplanationAudioUrl: q.correctExplanationAudioUrl,
+      correctExplanationTimestampsUrl: q.correctExplanationTimestampsUrl,
+      incorrectExplanationAudioUrls: q.incorrectExplanationAudioUrls,
+      incorrectExplanationTimestampsUrls: q.incorrectExplanationTimestampsUrls,
+      source: 'additional',
+    })))
 
-    return NextResponse.json({ questions: allQuestions })
+    // Shuffle all questions together
+    const shuffledAll = [...selectedQuestions].sort(() => Math.random() - 0.5)
+
+    return NextResponse.json({ 
+      questions: shuffledAll,
+      examQuestionCount: shuffledAll.length // Total questions available
+    })
   } catch (error: any) {
     console.error('[Exam Questions GET] Error:', error)
     return NextResponse.json({ error: 'Failed to fetch exam questions' }, { status: 500 })

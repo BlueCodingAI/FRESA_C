@@ -13,13 +13,22 @@ interface MenuItem {
   children?: MenuItem[];
 }
 
+interface UserProgress {
+  chapterNumber: number;
+  quizCompleted: boolean;
+  quizScore: number;
+  quizTotal: number;
+}
+
 interface TableOfContentsProps {
   items: MenuItem[];
   currentPath?: string;
   activeSectionId?: string; // ID of the section currently playing audio
+  allUserProgress?: UserProgress[]; // All chapters' progress for navigation checks
+  currentChapterNumber?: number; // Current chapter number
 }
 
-export default function TableOfContents({ items, currentPath, activeSectionId }: TableOfContentsProps) {
+export default function TableOfContents({ items, currentPath, activeSectionId, allUserProgress = [], currentChapterNumber }: TableOfContentsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
   const router = useRouter();
@@ -52,10 +61,49 @@ export default function TableOfContents({ items, currentPath, activeSectionId }:
     });
   };
 
+  // Extract chapter number from path (e.g., "/chapter/5" -> 5)
+  const getChapterNumberFromPath = (path: string): number | null => {
+    const match = path.match(/\/chapter\/(\d+)/);
+    return match ? parseInt(match[1]) : null;
+  };
+
+  // Check if a chapter is accessible (all previous chapters must have passed quizzes)
+  const isChapterAccessible = (targetChapterNumber: number): boolean => {
+    if (!targetChapterNumber || targetChapterNumber <= 1) {
+      return true; // Chapter 1 and introduction are always accessible
+    }
+    
+    // Check if all previous chapters (1 to targetChapterNumber - 1) have passed quizzes
+    for (let chNum = 1; chNum < targetChapterNumber; chNum++) {
+      const progress = allUserProgress.find((p: UserProgress) => p.chapterNumber === chNum);
+      if (!progress || !progress.quizCompleted || progress.quizScore < (progress.quizTotal * 0.8)) {
+        return false; // Previous chapter not passed
+      }
+    }
+    return true;
+  };
+
   const handleNavigation = (item: MenuItem, e?: React.MouseEvent) => {
     if (item.sectionId) {
-      // If it's a section, navigate to chapter and set the section
+      // If it's a section, check if the chapter is accessible
       e?.stopPropagation();
+      
+      const targetChapterNumber = getChapterNumberFromPath(item.path);
+      
+      // Check if target chapter is accessible
+      if (targetChapterNumber && !isChapterAccessible(targetChapterNumber)) {
+        // Find which chapter is blocking access
+        let blockingChapter = 1;
+        for (let chNum = 1; chNum < targetChapterNumber; chNum++) {
+          const progress = allUserProgress.find((p: UserProgress) => p.chapterNumber === chNum);
+          if (!progress || !progress.quizCompleted || progress.quizScore < (progress.quizTotal * 0.8)) {
+            blockingChapter = chNum;
+            break;
+          }
+        }
+        alert(`You must complete and pass Chapter ${blockingChapter}'s quiz with at least 80% before accessing this section.`);
+        return;
+      }
       
       // Store section ID in sessionStorage to be picked up by the chapter page
       sessionStorage.setItem('targetSection', item.sectionId);
@@ -80,7 +128,7 @@ export default function TableOfContents({ items, currentPath, activeSectionId }:
       e?.stopPropagation();
       toggleChapter(item.id, e || {} as React.MouseEvent);
     } else {
-      // Regular navigation item
+      // Regular navigation item (introduction, etc.)
       router.push(item.path);
       setIsOpen(false);
     }
@@ -116,17 +164,26 @@ export default function TableOfContents({ items, currentPath, activeSectionId }:
               const isExpanded = item.isChapter && (expandedChapters.has(item.id) || shouldAutoExpand);
               const hasChildren = item.children && item.children.length > 0;
               
+              // Check if this chapter/section is accessible
+              const targetChapterNumber = item.path ? getChapterNumberFromPath(item.path) : null;
+              const isAccessible = targetChapterNumber ? isChapterAccessible(targetChapterNumber) : true;
+              const isLocked = !isAccessible;
+              
               return (
                 <div key={item.id} className="space-y-0.5">
                   <button
                     onClick={(e) => handleNavigation(item, e)}
+                    disabled={isLocked}
                     className={`w-full text-left px-3 py-2.5 rounded-lg transition-all duration-200 ${
-                      pathname === item.path || currentPath === item.path
+                      isLocked
+                        ? "text-gray-500 cursor-not-allowed opacity-50"
+                        : pathname === item.path || currentPath === item.path
                         ? "bg-gradient-to-r from-blue-500/40 to-cyan-500/30 text-blue-100 font-semibold border-l-4 border-cyan-400 shadow-md"
                         : item.isChapter
                         ? "text-gray-200 hover:bg-blue-500/20 hover:text-white font-medium"
                         : "text-gray-300 hover:bg-blue-500/15 hover:text-white hover:translate-x-1"
                     }`}
+                    title={isLocked ? "Complete previous chapters' quizzes to unlock" : undefined}
                   >
                     <div className="flex items-center gap-2">
                       {item.isChapter && hasChildren && (
@@ -140,6 +197,7 @@ export default function TableOfContents({ items, currentPath, activeSectionId }:
                         </svg>
                       )}
                       {!item.isChapter && hasChildren && <span className="w-4" />}
+                      {isLocked && <span className="text-xs">🔒</span>}
                       <span className={`${item.isChapter ? 'text-sm font-semibold' : 'text-xs'} leading-relaxed`}>
                         {item.title}
                       </span>
@@ -157,27 +215,38 @@ export default function TableOfContents({ items, currentPath, activeSectionId }:
                         {item.children?.map((child, index) => {
                           const isActive = pathname === child.path || currentPath === child.path;
                           const isPlaying = activeSectionId === child.sectionId;
+                          const childChapterNumber = child.path ? getChapterNumberFromPath(child.path) : null;
+                          const isChildAccessible = childChapterNumber ? isChapterAccessible(childChapterNumber) : true;
+                          const isChildLocked = !isChildAccessible;
+                          
                           return (
                             <button
                               key={child.id}
                               onClick={(e) => handleNavigation(child, e)}
+                              disabled={isChildLocked}
                               className={`w-full text-left px-3 py-1.5 rounded-md transition-all duration-300 ease-in-out ${
-                                isActive || isPlaying
+                                isChildLocked
+                                  ? "text-gray-500 cursor-not-allowed opacity-50"
+                                  : isActive || isPlaying
                                   ? "bg-blue-500/30 text-blue-200 font-medium border-l-2 border-blue-400 shadow-md"
                                   : "text-gray-400 hover:bg-blue-500/30 hover:text-white hover:translate-x-2 hover:shadow-lg hover:border-l-2 hover:border-blue-400/60"
                               } ${isExpanded ? 'animate-slide-in-left' : ''}`}
+                              title={isChildLocked ? "Complete previous chapters' quizzes to unlock" : undefined}
                               style={{
                                 animationDelay: isExpanded ? `${index * 30}ms` : '0ms',
                               }}
                             >
-                              <div className="flex items-center gap-2">
-                                {isPlaying && (
-                                  <svg className="w-3 h-3 text-blue-400 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                                  </svg>
-                                )}
-                                <span className="text-xs leading-relaxed">{child.title}</span>
-                              </div>
+                                  <div className="flex items-center gap-2">
+                                    {isPlaying && (
+                                      <svg className="w-3 h-3 text-blue-400 animate-pulse" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                                      </svg>
+                                    )}
+                                    <span className="text-xs leading-relaxed">
+                                      {child.title}
+                                      {isChildLocked && <span className="ml-1 text-xs">🔒</span>}
+                                    </span>
+                                  </div>
                             </button>
                           );
                         })}
@@ -217,17 +286,26 @@ export default function TableOfContents({ items, currentPath, activeSectionId }:
                   const isExpanded = item.isChapter && expandedChapters.has(item.id);
                   const hasChildren = item.children && item.children.length > 0;
                   
+                  // Check if this chapter/section is accessible
+                  const targetChapterNumber = item.path ? getChapterNumberFromPath(item.path) : null;
+                  const isAccessible = targetChapterNumber ? isChapterAccessible(targetChapterNumber) : true;
+                  const isLocked = !isAccessible;
+                  
                   return (
                     <div key={item.id} className="space-y-1">
                       <button
                         onClick={(e) => handleNavigation(item, e)}
+                        disabled={isLocked}
                         className={`w-full text-left px-4 py-3 rounded-lg transition-all duration-200 ${
-                          pathname === item.path || currentPath === item.path
+                          isLocked
+                            ? "text-gray-500 cursor-not-allowed opacity-50"
+                            : pathname === item.path || currentPath === item.path
                             ? "bg-blue-500/30 text-blue-300 font-semibold border-l-4 border-blue-500"
                             : item.isChapter
                             ? "text-gray-200 hover:bg-blue-500/20 hover:text-white font-medium"
                             : "text-gray-300 hover:bg-blue-500/10 hover:text-white"
                         }`}
+                        title={isLocked ? "Complete previous chapters' quizzes to unlock" : undefined}
                       >
                         <div className="flex items-center gap-2">
                           {item.isChapter && hasChildren && (
@@ -241,6 +319,7 @@ export default function TableOfContents({ items, currentPath, activeSectionId }:
                             </svg>
                           )}
                           {!item.isChapter && hasChildren && <span className="w-4" />}
+                          {isLocked && <span className="text-xs">🔒</span>}
                           <span className={item.isChapter ? 'text-sm font-semibold' : 'text-sm'}>
                             {item.title}
                           </span>
@@ -258,15 +337,23 @@ export default function TableOfContents({ items, currentPath, activeSectionId }:
                             {item.children?.map((child, index) => {
                               const isActive = pathname === child.path || currentPath === child.path;
                               const isPlaying = activeSectionId === child.sectionId;
+                              const childChapterNumber = child.path ? getChapterNumberFromPath(child.path) : null;
+                              const isChildAccessible = childChapterNumber ? isChapterAccessible(childChapterNumber) : true;
+                              const isChildLocked = !isChildAccessible;
+                              
                               return (
                                 <button
                                   key={child.id}
                                   onClick={(e) => handleNavigation(child, e)}
+                                  disabled={isChildLocked}
                                   className={`w-full text-left px-4 py-2 rounded-md transition-all duration-300 ease-in-out ${
-                                    isActive || isPlaying
+                                    isChildLocked
+                                      ? "text-gray-500 cursor-not-allowed opacity-50"
+                                      : isActive || isPlaying
                                       ? "bg-blue-500/30 text-blue-200 font-medium border-l-2 border-blue-400 shadow-md"
                                       : "text-gray-400 hover:bg-blue-500/30 hover:text-white hover:translate-x-2 hover:shadow-lg hover:border-l-2 hover:border-blue-400/60"
                                   } ${isExpanded ? 'animate-slide-in-left' : ''}`}
+                                  title={isChildLocked ? "Complete previous chapters' quizzes to unlock" : undefined}
                                   style={{
                                     animationDelay: isExpanded ? `${index * 30}ms` : '0ms',
                                   }}

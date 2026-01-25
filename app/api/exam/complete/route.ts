@@ -32,8 +32,11 @@ export async function POST(request: NextRequest) {
     })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-    // Only send email for End-of-Course Exam
-    if (examType === 'end-of-course') {
+    // Only send email for End-of-Course Exam if passed (80%+)
+    const percentage = total > 0 ? Math.round((score / total) * 100) : 0
+    const passed = percentage >= 80
+    
+    if (examType === 'end-of-course' && passed) {
       const notifyTo = process.env.ADMIN_NOTIFY_EMAIL
       if (notifyTo) {
         const finishDate = new Date().toLocaleString('en-US', {
@@ -54,8 +57,7 @@ export async function POST(request: NextRequest) {
           timeZoneName: 'short'
         })
 
-        const percentage = total > 0 ? Math.round((score / total) * 100) : 0
-        const passStatus = percentage >= 80 ? 'PASSED ✅' : 'FAILED ❌'
+        const passStatus = 'PASSED ✅'
 
         const studentName = user.name || user.email
         const subject = `${studentName} Completed End-of-Course Exam on 63Hours.com`

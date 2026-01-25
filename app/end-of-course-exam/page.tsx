@@ -16,6 +16,7 @@ export default function EndOfCourseExamPage() {
   const [showQuiz, setShowQuiz] = useState(true);
   const [allChaptersCompleted, setAllChaptersCompleted] = useState(false);
   const [checkingCompletion, setCheckingCompletion] = useState(true);
+  const [totalChapters, setTotalChapters] = useState<number | null>(null);
 
   useEffect(() => {
     checkCompletion();
@@ -44,6 +45,7 @@ export default function EndOfCourseExamPage() {
 
       if (response.ok) {
         const data = await response.json();
+        setTotalChapters(data.totalChapters || null);
         if (data.allCompleted) {
           setAllChaptersCompleted(true);
           fetchQuestions();
@@ -73,13 +75,12 @@ export default function EndOfCourseExamPage() {
 
       if (response.ok) {
         const data = await response.json();
-        // Get 100 random questions
+        // Questions are already shuffled and selected based on per-chapter settings
+        // Just use all questions returned (they're already randomized)
         const allQuestions = data.questions || [];
-        const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
-        const selectedQuestions = shuffled.slice(0, 100);
         
         // Convert to QuizQuestion format
-        const formattedQuestions: QuizQuestion[] = selectedQuestions.map((q: any) => ({
+        const formattedQuestions: QuizQuestion[] = allQuestions.map((q: any) => ({
           id: q.id,
           question: q.question,
           options: q.options,
@@ -111,43 +112,35 @@ export default function EndOfCourseExamPage() {
     const token = getToken();
     if (!token) return;
 
-    // Send completion notification
-    try {
-      await fetch("/api/exam/complete", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          score,
-          total,
-          examType: "end-of-course",
-        }),
-      });
-    } catch (err) {
-      console.error("Error sending completion notification:", err);
-    }
-
     const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
     const passed = percentage >= 80;
 
+    // Send completion notification only if passed
     if (passed) {
+      try {
+        await fetch("/api/exam/complete", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            score,
+            total,
+            examType: "end-of-course",
+          }),
+        });
+      } catch (err) {
+        console.error("Error sending completion notification:", err);
+      }
+      
       // Passed - show success and redirect
       router.push(`/congratulations?exam=end-of-course&score=${score}&total=${total}`);
     } else {
-      // Failed - show retry message
-      setQuizScore({ score, total });
-      setShowRetryMessage(true);
+      // Failed - End-of-Course Exam does not allow retries
+      // Just show the results (Quiz component will handle it with disableRetry)
       setShowQuiz(false);
     }
-  };
-
-  const handleRetry = () => {
-    setShowRetryMessage(false);
-    // Fetch new random questions
-    fetchQuestions();
-    setShowQuiz(true);
   };
 
   if (checkingCompletion || loading) {
@@ -176,7 +169,7 @@ export default function EndOfCourseExamPage() {
             <div className="bg-[#1a1f3a] rounded-2xl border border-red-500/30 p-6 md:p-8 max-w-md w-full text-center">
               <h2 className="text-2xl font-bold text-white mb-4">Not Available</h2>
               <p className="text-gray-300 mb-6">
-                You must complete all 19 chapters before taking the End-of-Course Exam.
+                You must complete all {totalChapters !== null ? totalChapters : 'available'} chapters before taking the End-of-Course Exam.
               </p>
               <button
                 onClick={() => router.push("/")}
@@ -202,27 +195,14 @@ export default function EndOfCourseExamPage() {
               <h1 className="text-3xl md:text-4xl font-bold text-center mb-8 text-white">
                 End-Of-Course Exam
               </h1>
-              <Quiz questions={questions} onComplete={handleQuizComplete} shuffle={true} />
+              <Quiz 
+                questions={questions} 
+                onComplete={handleQuizComplete} 
+                shuffle={true}
+                disableRetry={true}
+                disableBack={true}
+              />
             </>
-          )}
-          
-          {showRetryMessage && quizScore && (
-            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <div className="bg-[#1a1f3a] rounded-2xl border border-yellow-500/30 p-6 md:p-8 max-w-md w-full">
-                <h2 className="text-2xl font-bold text-white mb-4">End-Of-Course Exam Results</h2>
-                <p className="text-gray-300 mb-6">
-                  Your score was {quizScore.score} out of {quizScore.total}, which is {Math.round((quizScore.score / quizScore.total) * 100)}%.
-                </p>
-                <div className="flex flex-col gap-3">
-                  <button
-                    onClick={handleRetry}
-                    className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-semibold rounded-lg transition-all"
-                  >
-                    Take End-Of-Course Exam Again
-                  </button>
-                </div>
-              </div>
-            </div>
           )}
         </div>
       </main>

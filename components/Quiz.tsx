@@ -36,9 +36,13 @@ interface QuizProps {
   shuffle?: boolean; // Whether to shuffle questions
   onRetry?: () => void; // Callback for retry action
   onContinue?: () => void; // Callback for continue action
+  onPracticeAgain?: () => void; // Callback for practice again (when passed)
+  disableRetry?: boolean; // Disable retry functionality (for End-of-Course Exam)
+  disableBack?: boolean; // Disable back navigation (for End-of-Course Exam)
+  retryButtonText?: string; // Custom text for retry button (e.g., "Take Practice Quiz Again")
 }
 
-export default function Quiz({ questions, onComplete, showCharacter = true, searchHighlight, shuffle = false, onRetry, onContinue }: QuizProps) {
+export default function Quiz({ questions, onComplete, showCharacter = true, searchHighlight, shuffle = false, onRetry, onContinue, onPracticeAgain, disableRetry = false, disableBack = false, retryButtonText }: QuizProps) {
   // Shuffle questions if shuffle prop is true - recalculate when shuffle changes
   const shuffledQuestions = useMemo(() => {
     if (shuffle) {
@@ -648,13 +652,35 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                     ? (
                       <span className="inline-block">
                         <span className="text-2xl mr-2">🎉</span>
-                        Congratulations! You've successfully passed the quiz and demonstrated your understanding of the material.
+                        {onContinue ? (
+                          // Practice Exam: Custom message
+                          <>
+                            Congratulations! You've passed the practice exam. What would you like to do?
+                          </>
+                        ) : (
+                          // Chapter Quiz: Standard message
+                          <>
+                            Congratulations! You've successfully passed the quiz and demonstrated your understanding of the material.
+                          </>
+                        )}
                       </span>
                     ) : (
                       <span>
-                        Your score was <span className="font-bold text-white">{finalScore}</span> out of <span className="font-bold text-white">{shuffledQuestions.length}</span>, which is <span className="font-bold text-white">{percentage}%</span>. 
-                        <br className="hidden md:block" />
-                        Would you like to try taking the quiz again to better prepare for the End-Of-Course exam and Florida State Exam?
+                        Your score was <span className="font-bold text-white">{finalScore}</span> out of <span className="font-bold text-white">{shuffledQuestions.length}</span>, which is <span className="font-bold text-white">{percentage}%</span>.
+                        {!disableRetry && !onContinue && (
+                          <>
+                            <br className="hidden md:block" />
+                            {/* Chapter Quiz: Simple message - no practice exam references */}
+                            You need to score at least 80% to proceed to the next chapter.
+                          </>
+                        )}
+                        {!disableRetry && onContinue && (
+                          <>
+                            <br className="hidden md:block" />
+                            {/* Practice Exam: Show warning about 30-day wait */}
+                            Because you got less than 80%, we strongly recommend doing another practice exam. If you fail the actual exam, you will have to wait 30 days until you can take it again (this is state law).
+                          </>
+                        )}
                       </span>
                     )}
                 </p>
@@ -663,57 +689,123 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
 
             {/* Action Buttons - Modern Design */}
             <div className="mt-10">
-              {passed ? (
-                <button
-                  onClick={handleViewResultsComplete}
-                  className="w-full group relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white font-bold py-3 px-4 md:py-5 md:px-8 rounded-xl text-sm md:text-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50"
-                >
-                  <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
-                    Continue to Next Chapter
-                    <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                    </svg>
-                  </span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                </button>
+                  {passed ? (
+                // Passed (>= 80%) - show options based on context
+                onContinue ? (
+                  // Practice Exam: Show both options
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <button
+                      onClick={onContinue}
+                      className="flex-1 group relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white font-bold py-3 px-4 md:py-5 md:px-8 rounded-xl text-sm md:text-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50"
+                    >
+                      <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
+                        Take End-Of-Course Exam
+                        <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                      </span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                    </button>
+                    {onPracticeAgain && (
+                      <button
+                        onClick={onPracticeAgain}
+                        className="flex-1 group relative overflow-hidden bg-[#1a2f4a]/80 border-2 border-gray-500/40 hover:border-gray-400/60 text-gray-200 hover:text-white font-semibold py-3 px-4 md:py-5 md:px-8 rounded-xl text-sm md:text-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] hover:bg-[#1a2f4a]"
+                      >
+                        <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
+                          <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:rotate-180 transition-transform duration-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          Take Another Practice Exam
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  // Chapter Quiz: Show both continue and practice again
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <button
+                      onClick={handleViewResultsComplete}
+                      className="flex-1 group relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white font-bold py-3 px-4 md:py-5 md:px-8 rounded-xl text-sm md:text-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50"
+                    >
+                      <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
+                        Continue to Next Chapter
+                        <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                        </svg>
+                      </span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                    </button>
+                    {onPracticeAgain && (
+                      <button
+                        onClick={onPracticeAgain}
+                        className="flex-1 group relative overflow-hidden bg-[#1a2f4a]/80 border-2 border-gray-500/40 hover:border-gray-400/60 text-gray-200 hover:text-white font-semibold py-3 px-4 md:py-5 md:px-8 rounded-xl text-sm md:text-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] hover:bg-[#1a2f4a]"
+                      >
+                        <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
+                          <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:rotate-180 transition-transform duration-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                          Take Another Practice Quiz
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                )
               ) : (
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <button
-                    onClick={() => {
-                      // Call onRetry to trigger parent to reset quiz with new shuffle
-                      if (onRetry) {
-                        onRetry();
-                      }
-                    }}
-                    className="flex-1 group relative overflow-hidden bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-500 hover:from-blue-500 hover:via-cyan-400 hover:to-blue-400 text-white font-bold py-3 px-4 md:py-4 md:px-6 rounded-xl text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50"
-                  >
-                    <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
-                      <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:rotate-180 transition-transform duration-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      Take the Quiz Again
-                    </span>
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-                  </button>
-                  <button
-                    onClick={() => {
-                      // Call onComplete to trigger parent's continue logic
-                      if (onContinue) {
-                        onContinue();
-                      } else {
+                // Show retry buttons only if not disabled (for End-of-Course Exam)
+                !disableRetry ? (
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <button
+                      onClick={() => {
+                        // Call onRetry to trigger parent to reset quiz with new shuffle
+                        if (onRetry) {
+                          onRetry();
+                        }
+                      }}
+                      className="flex-1 group relative overflow-hidden bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-500 hover:from-blue-500 hover:via-cyan-400 hover:to-blue-400 text-white font-bold py-3 px-4 md:py-4 md:px-6 rounded-xl text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50"
+                    >
+                      <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
+                        <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:rotate-180 transition-transform duration-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        {retryButtonText || "Take the Quiz Again"}
+                      </span>
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                    </button>
+                    {/* Only show continue button if onContinue is provided (for Practice Exam failed) */}
+                    {onContinue && (
+                      <button
+                        onClick={() => {
+                          // Call onContinue (for Practice Exam -> End-of-Course)
+                          onContinue();
+                        }}
+                        className="flex-1 group relative overflow-hidden bg-[#1a2f4a]/80 border-2 border-gray-500/40 hover:border-gray-400/60 text-gray-200 hover:text-white font-semibold py-3 px-4 md:py-4 md:px-6 rounded-xl text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] hover:bg-[#1a2f4a]"
+                      >
+                        <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
+                          Take End-Of-Course Exam
+                          <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                          </svg>
+                        </span>
+                      </button>
+                    )}
+                    {/* Chapter Quiz: No continue button when failed - must retake */}
+                  </div>
+                ) : (
+                  // End-of-Course Exam: No retry, just show message
+                  <div className="text-center">
+                    <p className="text-gray-400 text-sm md:text-base mb-4">
+                      End-of-Course Exam does not allow retries. Please contact support if you need assistance.
+                    </p>
+                    <button
+                      onClick={() => {
                         handleViewResultsComplete();
-                      }
-                    }}
-                    className="flex-1 group relative overflow-hidden bg-[#1a2f4a]/80 border-2 border-gray-500/40 hover:border-gray-400/60 text-gray-200 hover:text-white font-semibold py-3 px-4 md:py-4 md:px-6 rounded-xl text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] hover:bg-[#1a2f4a]"
-                  >
-                    <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
-                      Continue to Next Chapter
-                      <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                      </svg>
-                    </span>
-                  </button>
-                </div>
+                      }}
+                      className="w-full px-4 py-3 bg-[#1a2f4a]/80 border-2 border-gray-500/40 hover:border-gray-400/60 text-gray-200 hover:text-white font-semibold rounded-xl transition-all"
+                    >
+                      Return to Home
+                    </button>
+                  </div>
+                )
               )}
             </div>
           </div>
