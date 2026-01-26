@@ -620,7 +620,7 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
           <div className={`relative z-10 ${isEndOfCourseExam ? 'p-5 md:p-8 lg:p-10' : 'p-4 md:p-6'}`}>
             {/* Character - Top Section - Enhanced for End-of-Course Exam */}
             {showCharacter && (
-              <div className={`flex justify-center ${isEndOfCourseExam && passed ? 'mb-20 md:mb-15' : isEndOfCourseExam ? 'mb-20 md:mb-10' : 'mb-6'}`}>
+              <div className={`flex justify-center ${isEndOfCourseExam && passed ? 'mb-20 md:mb-15' : isEndOfCourseExam ? 'mb-20 md:mb-10' : chapterNumber ? 'mb-20 md:mb-10' : 'mb-6'}`}>
                 <div className="relative">
                   {isEndOfCourseExam && passed ? (
                     <>
@@ -652,7 +652,7 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
               
               {/* Chapter Quiz Title - Integrated into score card - More spacing from bird */}
               {chapterNumber && (
-                <h2 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-300 to-cyan-300 mb-4 tracking-tight mt-2">
+                <h2 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-300 to-cyan-300 mb-4 tracking-tight">
                   Chapter {chapterNumber} Quiz
                 </h2>
               )}
@@ -895,7 +895,7 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                           <svg className="w-4 h-4 transform group-hover:rotate-180 transition-transform duration-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                           </svg>
-                          Take Another Practice Quiz
+                          Take Practice Quiz Again
                         </span>
                       </button>
                     )}
