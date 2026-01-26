@@ -15,6 +15,7 @@ export default function EndOfCourseExamPage() {
   const [allChaptersCompleted, setAllChaptersCompleted] = useState(false);
   const [checkingCompletion, setCheckingCompletion] = useState(true);
   const [totalChapters, setTotalChapters] = useState<number | null>(null);
+  const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
     checkCompletion();
@@ -160,6 +161,11 @@ export default function EndOfCourseExamPage() {
     }
   };
 
+  const handleShowResults = () => {
+    // Hide header when results are shown
+    setShowResults(true);
+  };
+
   if (checkingCompletion || loading) {
     return (
       <AuthGuard>
@@ -221,54 +227,29 @@ export default function EndOfCourseExamPage() {
         <div className="relative z-10 min-h-screen flex flex-col items-center justify-center pt-20 pb-8 px-4 md:px-8 md:pt-24">
           {showQuiz && questions.length > 0 && (
             <>
-              {/* Modern Header Section */}
-              <div className="text-center mb-8 md:mb-12">
-                <div className="inline-block mb-4">
-                  <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-yellow-400/20 to-orange-500/20 rounded-2xl flex items-center justify-center mx-auto border-2 border-yellow-400/30">
-                    <svg className="w-8 h-8 md:w-10 md:h-10 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                    </svg>
-                  </div>
-                </div>
-                <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-300 to-red-400 mb-3">
-                  End-Of-Course Exam
-                </h1>
-                <p className="text-gray-300 text-lg md:text-xl max-w-2xl mx-auto">
-                  Final assessment to demonstrate your mastery of the course material
-                </p>
-              </div>
-
-              {/* Exam Info Card */}
-              <div className="bg-gradient-to-br from-[#1a1f3a]/80 to-[#0a0e27]/80 backdrop-blur-lg rounded-2xl border border-cyan-500/30 shadow-2xl p-6 md:p-8 mb-8 max-w-2xl w-full">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-cyan-500/20 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              {/* Modern Header Section - Hide when quiz results are shown */}
+              {!showResults && (
+                <div className="text-center mb-8 md:mb-12">
+                  <div className="inline-block mb-4">
+                    <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-yellow-400/20 to-orange-500/20 rounded-2xl flex items-center justify-center mx-auto border-2 border-yellow-400/30">
+                      <svg className="w-8 h-8 md:w-10 md:h-10 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
                       </svg>
                     </div>
-                    <div>
-                      <p className="text-gray-400 text-sm">Total Questions</p>
-                      <p className="text-white font-bold text-xl">{questions.length}</p>
-                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
-                      <svg className="w-5 h-5 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <p className="text-gray-400 text-sm">Passing Score</p>
-                      <p className="text-white font-bold text-xl">75%</p>
-                    </div>
-                  </div>
+                  <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-300 to-red-400 mb-3">
+                    End-Of-Course Exam
+                  </h1>
+                  <p className="text-gray-300 text-lg md:text-xl max-w-2xl mx-auto">
+                    Final assessment to demonstrate your mastery of the course material
+                  </p>
                 </div>
-              </div>
+              )}
 
               <Quiz 
                 questions={questions} 
-                onComplete={handleQuizComplete} 
+                onComplete={handleQuizComplete}
+                onShowResults={handleShowResults}
                 shuffle={true}
                 disableRetry={true}
                 disableBack={true}

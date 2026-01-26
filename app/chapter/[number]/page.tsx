@@ -686,6 +686,11 @@ export default function ChapterPage() {
     router.push("/end-of-course-exam");
   };
 
+  const handleGoToExams = () => {
+    // Navigate to exam selection page which shows both Practice Exam and End-of-Course Exam options
+    router.push("/exam-selection");
+  };
+
   const currentSectionData = sections.find(s => s.id === currentSection);
   const currentIndex = sections.findIndex(s => s.id === currentSection);
 
@@ -802,19 +807,20 @@ export default function ChapterPage() {
                 onRetry={handleRetryQuiz}
                 // For last chapter: pass onContinue to show "Take End-Of-Course Exam" button
                 // For other chapters: don't pass onContinue (will show "Continue to Next Chapter")
-                onContinue={(() => {
-                  const maxChapterNumber = Math.max(...allChapters.filter(ch => ch.number > 0).map(ch => ch.number), 0);
-                  return chapterNumber === maxChapterNumber ? handleGoToEndOfCourseExam : undefined;
-                })()}
-                onPracticeAgain={(() => {
-                  const maxChapterNumber = Math.max(...allChapters.filter(ch => ch.number > 0).map(ch => ch.number), 0);
-                  // For last chapter: show "Take Practice Quiz Again" button
-                  // For other chapters: show "Take Another Practice Quiz" button
-                  return chapterNumber === maxChapterNumber ? handleGoToPracticeExam : handlePracticeAgain;
-                })()}
+                // Don't pass onContinue for last chapter - use normal quiz result page
+                onContinue={undefined}
+                onPracticeAgain={handlePracticeAgain}
                 onContinueToNextChapter={handleContinueToNextChapter}
+                onGoToExams={(() => {
+                  const maxChapterNumber = Math.max(...allChapters.filter(ch => ch.number > 0).map(ch => ch.number), 0);
+                  return chapterNumber === maxChapterNumber ? handleGoToExams : undefined;
+                })()}
                 retryButtonText="Take the Quiz Again"
                 chapterNumber={chapterNumber}
+                isLastChapter={(() => {
+                  const maxChapterNumber = Math.max(...allChapters.filter(ch => ch.number > 0).map(ch => ch.number), 0);
+                  return chapterNumber === maxChapterNumber;
+                })()}
               />
             ) : (
               <div className="text-white">No quiz questions available yet.</div>

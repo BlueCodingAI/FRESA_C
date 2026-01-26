@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
+import { useRouter } from "next/navigation";
 import MrListings from "./MrListings";
 import AudioPlayer from "./AudioPlayer";
 import { highlightText, highlightTextHTML } from "@/lib/highlightText";
@@ -38,13 +39,17 @@ interface QuizProps {
   onContinue?: () => void; // Callback for continue action
   onPracticeAgain?: () => void; // Callback for practice again (when passed)
   onContinueToNextChapter?: () => void; // Callback for "Continue to Next Chapter" button (for chapter quizzes)
+  onGoToExams?: () => void; // Callback for "Go to End of Course Exam" button (for last chapter)
+  onShowResults?: () => void; // Callback when results screen is shown
   disableRetry?: boolean; // Disable retry functionality (for End-of-Course Exam)
   disableBack?: boolean; // Disable back navigation (for End-of-Course Exam)
   retryButtonText?: string; // Custom text for retry button (e.g., "Take Practice Quiz Again")
   chapterNumber?: number; // Chapter number for chapter quizzes (to display in title)
+  isLastChapter?: boolean; // Whether this is the last chapter
 }
 
-export default function Quiz({ questions, onComplete, showCharacter = true, searchHighlight, shuffle = false, onRetry, onContinue, onPracticeAgain, onContinueToNextChapter, disableRetry = false, disableBack = false, retryButtonText, chapterNumber }: QuizProps) {
+export default function Quiz({ questions, onComplete, showCharacter = true, searchHighlight, shuffle = false, onRetry, onContinue, onPracticeAgain, onContinueToNextChapter, onGoToExams, onShowResults, disableRetry = false, disableBack = false, retryButtonText, chapterNumber, isLastChapter }: QuizProps) {
+  const router = useRouter();
   // Shuffle questions if shuffle prop is true - recalculate when shuffle changes
   const shuffledQuestions = useMemo(() => {
     if (shuffle) {
@@ -445,6 +450,10 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
       // Show results screen instead of immediately calling onComplete
       setShowResults(true);
       setCharacterAnimation("congratulations");
+      // Notify parent that results are being shown
+      if (onShowResults) {
+        onShowResults();
+      }
     } else {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedAnswer(null);
@@ -579,111 +588,169 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
     // End-of-Course Exam uses 75% passing score, others use 80%
     const passingScore = disableRetry ? 75 : 80;
     const passed = percentage >= passingScore;
+    // Check if this is End-of-Course Exam (disableRetry = true and no chapterNumber)
+    const isEndOfCourseExam = disableRetry && !chapterNumber;
     
     return (
-      <div className="w-full max-w-5xl mx-auto">
-        {/* Results Screen - Modern Professional Design */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-[#0f1b2e] via-[#1a2f4a] to-[#0f1b2e] border-2 border-blue-500/30 rounded-3xl shadow-2xl backdrop-blur-xl">
-          {/* Decorative Background Elements */}
+      <div className="w-full max-w-4xl mx-auto">
+        {/* Results Screen - Modern Professional Design - Enhanced for End-of-Course Exam */}
+        <div className={`relative overflow-hidden w-full ${
+          isEndOfCourseExam && passed
+            ? "bg-gradient-to-br from-[#1a0f2e] via-[#2a1f4a] to-[#1a0f2e] border-2 border-yellow-500/50 shadow-2xl backdrop-blur-xl"
+            : isEndOfCourseExam
+            ? "bg-gradient-to-br from-[#0f1b2e] via-[#1a2f4a] to-[#0f1b2e] border-2 border-blue-500/30 shadow-2xl backdrop-blur-xl"
+            : "bg-gradient-to-br from-[#0f1b2e] via-[#1a2f4a] to-[#0f1b2e] border-2 border-blue-500/30 shadow-2xl backdrop-blur-xl"
+        } rounded-2xl`}>
+          {/* Decorative Background Elements - Enhanced for End-of-Course Exam */}
           <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500 rounded-full blur-3xl"></div>
-            <div className="absolute bottom-0 right-0 w-96 h-96 bg-cyan-500 rounded-full blur-3xl"></div>
+            {isEndOfCourseExam && passed ? (
+              <>
+                <div className="absolute top-0 left-0 w-96 h-96 bg-yellow-500 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute bottom-0 right-0 w-96 h-96 bg-orange-500 rounded-full blur-3xl animate-pulse"></div>
+                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-red-400 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+              </>
+            ) : (
+              <>
+                <div className="absolute top-0 left-0 w-96 h-96 bg-blue-500 rounded-full blur-3xl"></div>
+                <div className="absolute bottom-0 right-0 w-96 h-96 bg-cyan-500 rounded-full blur-3xl"></div>
+              </>
+            )}
           </div>
           
-          <div className="relative z-10 p-8 md:p-12">
-            {/* Character - Top Section - Moved higher */}
+          <div className={`relative z-10 ${isEndOfCourseExam ? 'p-5 md:p-8 lg:p-10' : 'p-4 md:p-6'}`}>
+            {/* Character - Top Section - Enhanced for End-of-Course Exam */}
             {showCharacter && (
-              <div className="flex justify-center mb-8 -mt-4">
+              <div className={`flex justify-center ${isEndOfCourseExam && passed ? 'mb-20 md:mb-15' : isEndOfCourseExam ? 'mb-20 md:mb-10' : 'mb-6'}`}>
                 <div className="relative">
-                  <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse"></div>
+                  {isEndOfCourseExam && passed ? (
+                    <>
+                      {/* Celebration effect for End-of-Course Exam pass */}
+                      <div className="absolute inset-0 bg-yellow-500/30 rounded-full blur-2xl animate-pulse"></div>
+                      <div className="absolute inset-0 bg-orange-500/20 rounded-full blur-xl animate-pulse" style={{ animationDelay: '0.3s' }}></div>
+                      <div className="absolute -top-3 -right-3 text-3xl animate-bounce">🎉</div>
+                      <div className="absolute -top-3 -left-3 text-3xl animate-bounce" style={{ animationDelay: '0.2s' }}>🎊</div>
+                      <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2 text-3xl animate-bounce" style={{ animationDelay: '0.4s' }}>🏆</div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 bg-blue-500/20 rounded-full blur-xl animate-pulse"></div>
+                  )}
                   <div className="relative">
-                    <MrListings size="medium" animation={characterAnimation} />
+                    <MrListings size={isEndOfCourseExam && passed ? "medium" : "small"} animation={isEndOfCourseExam && passed ? "congratulations" : characterAnimation} />
                   </div>
                 </div>
               </div>
             )}
 
             {/* Results Content */}
-            <div className="text-center mb-8">
+            <div className={`text-center ${isEndOfCourseExam ? 'mb-4 md:mb-5' : 'mb-4'}`}>
               {/* Title - Only show if not chapter quiz (to avoid duplication) */}
               {!chapterNumber && (
-                <h2 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400 mb-6 tracking-tight">
-                  Quiz Complete!
+                <h2 className={`${isEndOfCourseExam ? 'text-xl md:text-2xl lg:text-3xl mb-4 md:mb-5' : 'text-2xl md:text-3xl mb-3'} font-extrabold text-transparent bg-clip-text ${isEndOfCourseExam ? 'bg-gradient-to-r from-yellow-300 via-orange-300 to-red-400' : 'bg-gradient-to-r from-blue-400 via-cyan-400 to-blue-400'} tracking-tight leading-tight`}>
+                  {isEndOfCourseExam ? 'End-Of-Course Exam Complete!' : 'Quiz Complete!'}
                 </h2>
               )}
               
               {/* Chapter Quiz Title - Integrated into score card - More spacing from bird */}
               {chapterNumber && (
-                <h2 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-300 to-cyan-300 mb-8 tracking-tight mt-4">
+                <h2 className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-300 to-cyan-300 mb-4 tracking-tight mt-2">
                   Chapter {chapterNumber} Quiz
                 </h2>
               )}
               
-              {/* Score Card - Enhanced Modern Design */}
-              <div className="inline-flex flex-col items-center mb-6">
-                <div className={`relative overflow-hidden rounded-3xl p-10 md:p-12 mb-4 ${
-                  passed 
+              {/* Score Card - Enhanced Modern Design - Special for End-of-Course Exam */}
+              <div className={`flex flex-col items-center justify-center ${isEndOfCourseExam ? 'mb-4 md:mb-5' : 'mb-4'}`}>
+                <div className={`relative overflow-hidden ${isEndOfCourseExam ? 'rounded-2xl p-6 md:p-8 lg:p-10' : 'rounded-2xl p-6 md:p-8'} ${
+                  isEndOfCourseExam && passed
+                    ? "bg-gradient-to-br from-yellow-600/40 via-orange-500/35 to-red-500/40 border-2 border-yellow-400/70 shadow-2xl shadow-yellow-500/50"
+                    : isEndOfCourseExam
+                    ? "bg-gradient-to-br from-amber-600/30 via-yellow-500/25 to-amber-600/30 border-2 border-amber-400/60 shadow-2xl shadow-amber-500/30"
+                    : passed 
                     ? "bg-gradient-to-br from-green-600/30 via-emerald-500/25 to-green-600/30 border-2 border-green-400/60 shadow-2xl shadow-green-500/30" 
                     : "bg-gradient-to-br from-amber-600/30 via-yellow-500/25 to-amber-600/30 border-2 border-amber-400/60 shadow-2xl shadow-amber-500/30"
-                }`}>
+                } ${isEndOfCourseExam && passed ? 'animate-pulse' : ''}`}>
                   {/* Animated Background */}
-                  <div className={`absolute inset-0 opacity-25 ${
-                    passed ? "bg-gradient-to-r from-green-400 via-emerald-400 to-green-400" : "bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400"
-                  } animate-pulse`}></div>
+                  <div className={`absolute inset-0 opacity-20 ${
+                    isEndOfCourseExam && passed
+                      ? "bg-gradient-to-r from-yellow-400 via-orange-400 to-red-400"
+                      : passed 
+                      ? "bg-gradient-to-r from-green-400 via-emerald-400 to-green-400" 
+                      : "bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-400"
+                  } ${isEndOfCourseExam && passed ? 'animate-pulse' : ''}`}></div>
                   
                   {/* Glow Effect */}
                   <div className={`absolute -inset-1 bg-gradient-to-r ${
-                    passed ? "from-green-400 to-emerald-400" : "from-amber-400 to-yellow-400"
-                  } rounded-3xl blur opacity-30 animate-pulse`}></div>
+                    isEndOfCourseExam && passed
+                      ? "from-yellow-400 to-orange-400"
+                      : passed 
+                      ? "from-green-400 to-emerald-400" 
+                      : "from-amber-400 to-yellow-400"
+                  } rounded-2xl blur opacity-25 ${isEndOfCourseExam && passed ? 'animate-pulse' : ''}`}></div>
                   
-                  <div className="relative z-10">
-                    {/* Score Display - Enhanced */}
-                    <div className="text-7xl md:text-8xl font-black text-white mb-4 leading-none">
+                  <div className="relative z-10 flex flex-col items-center">
+                    {/* Score Display - Enhanced - Appropriate size for End-of-Course Exam */}
+                    <div className={`${isEndOfCourseExam ? 'text-4xl md:text-5xl lg:text-6xl mb-3 md:mb-4' : 'text-5xl md:text-6xl mb-3'} font-black text-white leading-none tracking-tight`}>
                       <span className="text-cyan-300 drop-shadow-lg">{finalScore}</span>
-                      <span className="text-gray-400 mx-3">/</span>
+                      <span className="text-gray-400 mx-2">/</span>
                       <span className="text-gray-200">{shuffledQuestions.length}</span>
                     </div>
                     
-                    {/* Percentage Badge - Enhanced */}
-                    <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-full text-xl md:text-2xl font-bold shadow-lg ${
-                      passed 
+                    {/* Percentage Badge - Enhanced - Special for End-of-Course Exam */}
+                    <div className={`inline-flex items-center justify-center gap-2 ${isEndOfCourseExam ? 'px-4 py-2 md:px-5 md:py-2.5 rounded-full text-sm md:text-base' : 'px-4 py-2 rounded-full text-base md:text-lg'} font-bold shadow-lg ${
+                      isEndOfCourseExam && passed
+                        ? "bg-gradient-to-r from-yellow-500/50 to-orange-500/50 text-yellow-100 border-2 border-yellow-400/80"
+                        : isEndOfCourseExam
+                        ? "bg-gradient-to-r from-amber-500/40 to-yellow-500/40 text-amber-100 border-2 border-amber-400/70"
+                        : passed 
                         ? "bg-gradient-to-r from-green-500/40 to-emerald-500/40 text-green-100 border-2 border-green-400/70" 
                         : "bg-gradient-to-r from-amber-500/40 to-yellow-500/40 text-amber-100 border-2 border-amber-400/70"
                     }`}>
-                      <span className="text-3xl font-black">{percentage}%</span>
-                      <span className="text-base md:text-lg font-semibold">
-                        {passed ? "✓ Passed" : (chapterNumber ? "Failed" : `Needs ${passingScore}% to Pass`)}
+                      <span className={`${isEndOfCourseExam ? 'text-lg md:text-xl' : 'text-2xl'} font-black`}>{percentage}%</span>
+                      <span className={`${isEndOfCourseExam ? 'text-xs md:text-sm' : 'text-sm md:text-base'} font-semibold whitespace-nowrap`}>
+                        {isEndOfCourseExam && passed ? "🏆 Certified!" : passed ? "✓ Passed" : (chapterNumber ? "Failed" : `Needs ${passingScore}% to Pass`)}
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
               
-              {/* Message - Enhanced */}
-              <div className="max-w-2xl mx-auto mb-6">
-                <p className={`text-xl md:text-2xl leading-relaxed font-semibold ${
-                  passed 
+              {/* Message - Enhanced - Special for End-of-Course Exam */}
+              <div className={`${isEndOfCourseExam ? 'max-w-2xl' : 'max-w-2xl'} mx-auto ${isEndOfCourseExam ? 'mb-4 md:mb-5' : 'mb-4'} px-2 md:px-4`}>
+                <p className={`${isEndOfCourseExam && passed ? 'text-sm md:text-base lg:text-lg' : isEndOfCourseExam ? 'text-sm md:text-base' : 'text-base md:text-lg'} leading-relaxed ${isEndOfCourseExam && passed ? 'font-semibold' : 'font-medium'} ${
+                  isEndOfCourseExam && passed
+                    ? "text-yellow-100"
+                    : isEndOfCourseExam
+                    ? "text-gray-200"
+                    : passed 
                     ? "text-green-100" 
                     : "text-gray-300"
                 }`}>
                   {passed 
                     ? (
                       <span className="inline-block">
-                        <span className="text-2xl mr-2">🎉</span>
-                        {onContinue ? (
-                          // Practice Exam: Custom message
+                        {isEndOfCourseExam ? (
                           <>
-                            Congratulations! You've passed the practice exam.
-                          </>
-                        ) : disableRetry ? (
-                          // End-of-Course Exam: Special message
-                          <>
-                            Outstanding! You've successfully passed the End-of-Course Exam! Your achievement will be recorded and you will receive a completion certificate.
+                            <span className="text-4xl mr-3">🎉</span>
+                            <span className="text-4xl mr-3">🏆</span>
+                            <span className="text-4xl mr-2">🎊</span>
+                            <br className="md:hidden" />
+                            <span className="block mt-2 md:inline">
+                              Outstanding! You've successfully passed the End-of-Course Exam! Your achievement will be recorded and you will receive a completion certificate.
+                            </span>
                           </>
                         ) : (
-                          // Chapter Quiz: Standard message
                           <>
-                            Congratulations!
+                            <span className="text-2xl mr-2">🎉</span>
+                            {onContinue ? (
+                              // Practice Exam: Custom message
+                              <>
+                                Congratulations! You've passed the practice exam.
+                              </>
+                            ) : (
+                              // Chapter Quiz: Standard message
+                              <>
+                                Congratulations!
+                              </>
+                            )}
                           </>
                         )}
                       </span>
@@ -719,36 +786,36 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
               </div>
             </div>
 
-            {/* Action Buttons - Modern Design */}
-            <div className="mt-10">
+            {/* Action Buttons - Modern Design - Enhanced for End-of-Course Exam */}
+            <div className={`${isEndOfCourseExam ? 'mt-4 md:mt-5' : 'mt-4'} px-2 md:px-4`}>
                   {passed ? (
                 // Passed - show options based on context
                 onContinue ? (
                   // Practice Exam: Show warning first, then both options
-                  <div className="space-y-6">
-                    {/* 30-Day Warning Notice - Before buttons */}
-                    <div className="bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border-2 border-amber-400/50 rounded-xl p-5 md:p-6 max-w-2xl mx-auto">
-                      <div className="flex items-start gap-3">
-                        <svg className="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="space-y-4">
+                    {/* 30-Day Warning Notice - Before buttons - Compact */}
+                    <div className="bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border-2 border-amber-400/50 rounded-lg p-3 md:p-4 max-w-2xl mx-auto">
+                      <div className="flex items-start gap-2">
+                        <svg className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                         <div className="flex-1">
-                          <p className="text-yellow-200 font-semibold text-base md:text-lg mb-1">Important Notice</p>
-                          <p className="text-gray-300 text-sm md:text-base leading-relaxed">
+                          <p className="text-yellow-200 font-semibold text-sm md:text-base mb-1">Important Notice</p>
+                          <p className="text-gray-300 text-xs md:text-sm leading-relaxed">
                             If you fail the End-of-Course Exam, you must wait <span className="font-bold text-white">30 days</span> before you can retake it (State Law requirement).
                           </p>
                         </div>
                       </div>
                     </div>
-                    {/* Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    {/* Buttons - Compact */}
+                    <div className="flex flex-col sm:flex-row gap-3">
                     <button
                       onClick={onContinue}
-                      className="flex-1 group relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white font-bold py-3 px-4 md:py-5 md:px-8 rounded-xl text-sm md:text-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50"
+                      className="flex-1 group relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white font-bold py-2.5 px-4 md:py-3 md:px-6 rounded-lg text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50"
                     >
                       <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
                         Take End-Of-Course Exam
-                        <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                         </svg>
                       </span>
@@ -757,10 +824,10 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                     {onPracticeAgain && (
                       <button
                         onClick={onPracticeAgain}
-                        className="flex-1 group relative overflow-hidden bg-[#1a2f4a]/80 border-2 border-gray-500/40 hover:border-gray-400/60 text-gray-200 hover:text-white font-semibold py-3 px-4 md:py-5 md:px-8 rounded-xl text-sm md:text-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] hover:bg-[#1a2f4a]"
+                        className="flex-1 group relative overflow-hidden bg-[#1a2f4a]/80 border-2 border-gray-500/40 hover:border-gray-400/60 text-gray-200 hover:text-white font-semibold py-2.5 px-4 md:py-3 md:px-6 rounded-lg text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] hover:bg-[#1a2f4a]"
                       >
                         <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
-                          <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:rotate-180 transition-transform duration-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 transform group-hover:rotate-180 transition-transform duration-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                           </svg>
                           Take Practice Quiz Again
@@ -770,34 +837,62 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                     </div>
                   </div>
                 ) : (
-                  // Chapter Quiz: Show both continue and practice again
-                  <div className="flex flex-col sm:flex-row gap-4">
+                  // Chapter Quiz or End-of-Course Exam: Show appropriate button
+                  <div className="flex flex-col sm:flex-row gap-3">
                     <button
                       onClick={() => {
                         // First call onComplete to save progress
                         handleViewResultsComplete();
-                        // Then navigate to next chapter if handler is provided
-                        if (onContinueToNextChapter) {
+                        // For End-of-Course Exam: navigate to home (certification will be handled)
+                        if (isEndOfCourseExam && passed) {
+                          router.push("/");
+                        } else if (isLastChapter && onGoToExams) {
+                          onGoToExams();
+                        } else if (onContinueToNextChapter) {
                           onContinueToNextChapter();
                         }
                       }}
-                      className="flex-1 group relative overflow-hidden bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white font-bold py-3 px-4 md:py-5 md:px-8 rounded-xl text-sm md:text-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50"
+                      className={`flex-1 group relative overflow-hidden ${
+                        isEndOfCourseExam && passed
+                          ? "bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 hover:from-yellow-400 hover:via-orange-400 hover:to-red-400 text-white font-bold py-2.5 px-4 md:py-3 md:px-6 rounded-xl text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-yellow-500/40 hover:shadow-yellow-500/60"
+                          : isEndOfCourseExam
+                          ? "bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white font-bold py-2.5 px-4 md:py-3 md:px-6 rounded-xl text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/40 hover:shadow-blue-500/60"
+                          : "bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white font-bold py-2.5 px-4 md:py-3 md:px-6 rounded-lg text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-xl shadow-blue-500/30 hover:shadow-blue-500/50"
+                      }`}
                     >
                       <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
-                        Continue to Next Chapter
-                        <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                        </svg>
+                        {isEndOfCourseExam && passed ? (
+                          <>
+                            🏆 Get Certification
+                            <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                          </>
+                        ) : isLastChapter ? (
+                          <>
+                            Go to End of Course Exam
+                            <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                          </>
+                        ) : (
+                          <>
+                            Continue to Next Chapter
+                            <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                          </>
+                        )}
                       </span>
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
                     </button>
                     {onPracticeAgain && (
                       <button
                         onClick={onPracticeAgain}
-                        className="flex-1 group relative overflow-hidden bg-[#1a2f4a]/80 border-2 border-gray-500/40 hover:border-gray-400/60 text-gray-200 hover:text-white font-semibold py-3 px-4 md:py-5 md:px-8 rounded-xl text-sm md:text-lg transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] hover:bg-[#1a2f4a]"
+                        className="flex-1 group relative overflow-hidden bg-[#1a2f4a]/80 border-2 border-gray-500/40 hover:border-gray-400/60 text-gray-200 hover:text-white font-semibold py-2.5 px-4 md:py-3 md:px-6 rounded-lg text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] hover:bg-[#1a2f4a]"
                       >
                         <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
-                          <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:rotate-180 transition-transform duration-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 transform group-hover:rotate-180 transition-transform duration-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                           </svg>
                           Take Another Practice Quiz
@@ -809,25 +904,25 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
               ) : (
                 // Show retry buttons only if not disabled (for End-of-Course Exam)
                 !disableRetry ? (
-                  <div className="space-y-6">
+                  <div className="space-y-4">
                     {/* Only show warning for Practice Exam (when onContinue is provided) */}
                     {onContinue && (
-                      <div className="bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border-2 border-amber-400/50 rounded-xl p-5 md:p-6 max-w-2xl mx-auto">
-                        <div className="flex items-start gap-3">
-                          <svg className="w-6 h-6 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="bg-gradient-to-br from-amber-500/20 to-yellow-500/20 border-2 border-amber-400/50 rounded-lg p-3 md:p-4 max-w-2xl mx-auto">
+                        <div className="flex items-start gap-2">
+                          <svg className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                           </svg>
                           <div className="flex-1">
-                            <p className="text-yellow-200 font-semibold text-base md:text-lg mb-1">Important Notice</p>
-                            <p className="text-gray-300 text-sm md:text-base leading-relaxed">
+                            <p className="text-yellow-200 font-semibold text-sm md:text-base mb-1">Important Notice</p>
+                            <p className="text-gray-300 text-xs md:text-sm leading-relaxed">
                               If you fail the End-of-Course Exam, you must wait <span className="font-bold text-white">30 days</span> before you can retake it (State Law requirement).
                             </p>
                           </div>
                         </div>
                       </div>
                     )}
-                    {/* Buttons */}
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    {/* Buttons - Compact */}
+                    <div className="flex flex-col sm:flex-row gap-3">
                       <button
                         onClick={() => {
                           // Call onRetry to trigger parent to reset quiz with new shuffle
@@ -835,10 +930,10 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                             onRetry();
                           }
                         }}
-                        className="flex-1 group relative overflow-hidden bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-500 hover:from-blue-500 hover:via-cyan-400 hover:to-blue-400 text-white font-bold py-3 px-4 md:py-4 md:px-6 rounded-xl text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50"
+                        className="flex-1 group relative overflow-hidden bg-gradient-to-r from-blue-600 via-cyan-500 to-blue-500 hover:from-blue-500 hover:via-cyan-400 hover:to-blue-400 text-white font-bold py-2.5 px-4 md:py-3 md:px-6 rounded-lg text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50"
                       >
                         <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
-                          <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:rotate-180 transition-transform duration-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 transform group-hover:rotate-180 transition-transform duration-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                           </svg>
                           {retryButtonText || "Take the Quiz Again"}
@@ -852,11 +947,11 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                             // Call onContinue (for Practice Exam -> End-of-Course)
                             onContinue();
                           }}
-                          className="flex-1 group relative overflow-hidden bg-[#1a2f4a]/80 border-2 border-gray-500/40 hover:border-gray-400/60 text-gray-200 hover:text-white font-semibold py-3 px-4 md:py-4 md:px-6 rounded-xl text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] hover:bg-[#1a2f4a]"
+                          className="flex-1 group relative overflow-hidden bg-[#1a2f4a]/80 border-2 border-gray-500/40 hover:border-gray-400/60 text-gray-200 hover:text-white font-semibold py-2.5 px-4 md:py-3 md:px-6 rounded-lg text-sm md:text-base transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] hover:bg-[#1a2f4a]"
                         >
                           <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
                             Take End-Of-Course Exam
-                            <svg className="w-4 h-4 md:w-5 md:h-5 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                             </svg>
                           </span>
@@ -866,16 +961,17 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                     </div>
                   </div>
                 ) : (
-                  // End-of-Course Exam: No retry, just show message
+                  // End-of-Course Exam: No retry, just show message and return to home
                   <div className="text-center">
-                    <p className="text-gray-400 text-sm md:text-base mb-4">
-                      End-of-Course Exam does not allow retries. According to state law, you must wait 30 days before you can retake this exam.
+                    <p className="text-gray-300 text-sm md:text-base mb-6 leading-relaxed">
+                      End-of-Course Exam does not allow retries. According to state law, you must wait <span className="font-bold text-yellow-300">30 days</span> before you can retake this exam.
                     </p>
                     <button
                       onClick={() => {
                         handleViewResultsComplete();
+                        router.push("/");
                       }}
-                      className="w-full px-4 py-3 bg-[#1a2f4a]/80 border-2 border-gray-500/40 hover:border-gray-400/60 text-gray-200 hover:text-white font-semibold rounded-xl transition-all"
+                      className={`w-full ${isEndOfCourseExam ? 'px-4 py-2.5 md:px-6 md:py-3 rounded-xl text-sm md:text-base' : 'px-6 py-3 rounded-xl text-base'} bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white font-bold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/40 hover:shadow-blue-500/60`}
                     >
                       Return to Home
                     </button>
