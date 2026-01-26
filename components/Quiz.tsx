@@ -843,9 +843,9 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                       onClick={() => {
                         // First call onComplete to save progress
                         handleViewResultsComplete();
-                        // For End-of-Course Exam: navigate to home (certification will be handled)
+                        // For End-of-Course Exam: navigate to certification page
                         if (isEndOfCourseExam && passed) {
-                          router.push("/");
+                          router.push("/certification");
                         } else if (isLastChapter && onGoToExams) {
                           onGoToExams();
                         } else if (onContinueToNextChapter) {
