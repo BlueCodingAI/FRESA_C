@@ -421,13 +421,8 @@ function HTMLContentWithHighlighting({
           span.style.textShadow = '0 0 10px rgba(251, 191, 36, 0.7), 0 0 15px rgba(59, 130, 246, 0.5)';
           span.style.transition = 'background 0.08s ease-out, color 0.08s ease-out, text-shadow 0.08s ease-out';
 
-          // Scroll to first highlighted word
-          if (displayWordIndex === 0 || wordsRef.current[displayWordIndex - 1]?.style.background === '') {
-            span.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
-            });
-          }
+          // Auto-scroll removed per user request
+          // Previously scrolled to highlighted word, but user prefers no auto-scrolling
         }
       });
     }
