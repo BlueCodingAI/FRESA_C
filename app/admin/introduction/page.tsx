@@ -57,10 +57,33 @@ export default function IntroductionEditPage() {
     }
   };
 
+  // Helper function to strip HTML and get plain text for audio generation
+  const stripHTML = (html: string): string => {
+    if (typeof document === 'undefined') {
+      // Server-side: simple regex strip
+      const tmp = html
+        .replace(/<[^>]*>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .trim();
+      return tmp;
+    }
+    const tmp = document.createElement('div');
+    tmp.innerHTML = html;
+    return (tmp.textContent || tmp.innerText || '').trim();
+  };
+
   // Helper function to build request body with TTS settings
   const buildAudioRequest = (text: string, context: 'section' | 'quiz' | 'introduction' = 'introduction') => {
+    // Strip HTML from text before sending to audio generation API
+    // (API route also cleans text, but this provides an extra layer of protection)
+    const plainText = stripHTML(text);
     return {
-      text,
+      text: plainText,
       type: 'both',
       context,
       ...ttsSettings, // Include all TTS settings

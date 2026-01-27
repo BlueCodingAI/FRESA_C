@@ -4,6 +4,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { generateAudioWithInworld } from '@/lib/inworld-tts'
+import { cleanTextForAudio } from '@/lib/text-cleaning'
 
 // Inworld AI API Configuration
 // Inworld uses Basic authentication with Base64 encoded credentials
@@ -55,6 +56,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Text is required' }, { status: 400 })
     }
 
+    // Clean text: remove all HTML, markdown, formatting codes, and color codes
+    // This ensures audio generation only processes plain text content
+    const cleanedText = cleanTextForAudio(text)
+    
+    if (!cleanedText || cleanedText.trim().length === 0) {
+      return NextResponse.json({ 
+        error: 'Text is required. Please ensure your content contains readable text after removing formatting.' 
+      }, { status: 400 })
+    }
+
     // Determine voice ID:
     // 1. If voiceId is explicitly provided, use it
     // 2. If context is 'quiz', use woman's voice
@@ -94,7 +105,7 @@ export async function POST(request: NextRequest) {
     
     try {
       const result = await generateAudioWithInworld(
-        text,
+        cleanedText,
         selectedVoiceId,
         INWORLD_API_KEY,
         ttsOptions
@@ -133,7 +144,7 @@ export async function POST(request: NextRequest) {
 
     // Generate unique filename
     const timestamp = Date.now()
-    const sanitizedText = text.substring(0, 20).replace(/[^a-zA-Z0-9]/g, '_')
+    const sanitizedText = cleanedText.substring(0, 20).replace(/[^a-zA-Z0-9]/g, '_')
     const audioFileName = `${timestamp}-${sanitizedText}.mp3`
 
     // Determine upload directory based on type

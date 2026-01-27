@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { cleanTextForAudio, splitIntoWords, buildWordMapping } from '@/lib/text-cleaning';
 
 interface WordTimestamp {
   word: string;
@@ -51,10 +52,15 @@ function HTMLContentWithHighlighting({
   const wordsRef = useRef<HTMLSpanElement[]>([]);
 
   // Create displayWords array exactly as the main component does
-  const displayWords = useMemo(() => plainText.split(/\s+/).filter(word => word.length > 0), [plainText]);
+  // Use the cleaned plainText (which should match the timestamp text)
+  // Use the same splitting function for consistency - this ensures perfect alignment
+  const displayWords = useMemo(() => {
+    return splitIntoWords(plainText);
+  }, [plainText]);
 
   // Initial render: parse HTML and wrap words in spans
   // This ensures word indices match exactly with displayWords array
+  // CRITICAL: Handle formatted text (bold, italic, underline, color) correctly
   useEffect(() => {
     if (!containerRef.current || typeof document === 'undefined') return;
 
@@ -62,8 +68,10 @@ function HTMLContentWithHighlighting({
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
 
-    // Get all text nodes in document order
-    const textNodes: Text[] = [];
+    // Strategy: Extract ALL text from HTML first (ignoring formatting tags)
+    // Then match words sequentially while preserving formatting
+    // This handles formatted text correctly (bold, italic, underline, color)
+    const allTextNodes: Text[] = [];
     const walker = document.createTreeWalker(
       tempDiv,
       NodeFilter.SHOW_TEXT,
@@ -72,49 +80,107 @@ function HTMLContentWithHighlighting({
 
     let node;
     while (node = walker.nextNode()) {
-      textNodes.push(node as Text);
+      allTextNodes.push(node as Text);
     }
 
-    // Process text nodes sequentially and wrap words
-    // Match each word found in HTML with displayWords by position
-    let displayWordIndex = 0;
-    wordsRef.current = new Array(displayWords.length).fill(null);
+    // Get all text content from HTML (without formatting) to verify word count
+    const fullHtmlText = allTextNodes.map(node => node.textContent || '').join(' ');
+    const cleanedFullText = cleanTextForAudio(fullHtmlText);
+    const fullWords = splitIntoWords(cleanedFullText);
+    
+    // Verify word counts match
+    if (fullWords.length !== displayWords.length) {
+      console.warn(`Word count mismatch: HTML has ${fullWords.length} words, displayWords has ${displayWords.length} words`);
+    }
 
-    textNodes.forEach((textNode) => {
+    // Now traverse HTML and wrap words, matching sequentially with displayWords
+    // Use a global word index that tracks across all text nodes
+    let globalWordIndex = 0;
+    wordsRef.current = new Array(displayWords.length).fill(null);
+    
+    // Process each text node and extract words, matching with global word index
+    allTextNodes.forEach((textNode) => {
       const text = textNode.textContent || '';
-      // Split by whitespace, preserving spaces
+      if (!text.trim()) {
+        // Empty text node, skip but preserve it
+        return;
+      }
+      
+      // Clean this node's text to get the words it contains
+      const cleanedNodeText = cleanTextForAudio(text);
+      const nodeWords = splitIntoWords(cleanedNodeText);
+      
+      if (nodeWords.length === 0) {
+        // No words in this node, preserve as-is
+        return;
+      }
+      
+      // Split the original text to preserve formatting while matching words
+      // We need to match each word in the original text with the cleaned words
       const segments = text.split(/(\s+)/);
       const fragment = document.createDocumentFragment();
+      let nodeWordIndex = 0;
 
       segments.forEach((segment) => {
         const trimmed = segment.trim();
         const isWord = trimmed.length > 0 && !/^\s+$/.test(segment);
         
-        if (isWord && displayWordIndex < displayWords.length) {
-          // Create span for this word at displayWordIndex
-          const span = document.createElement('span');
-          span.textContent = segment;
-          span.className = 'inline';
-          span.setAttribute('data-word-index', displayWordIndex.toString());
-          
-          // Store ref - this ensures wordsRef[displayWordIndex] = span for displayWords[displayWordIndex]
-          wordsRef.current[displayWordIndex] = span;
+        if (isWord) {
+          // This is a word - check if it matches the expected word from cleaned text
+          if (nodeWordIndex < nodeWords.length && globalWordIndex < displayWords.length) {
+            // Verify the word matches (normalize for comparison)
+            const cleanedSegment = cleanTextForAudio(segment).trim();
+            const expectedWord = nodeWords[nodeWordIndex];
+            
+            // Match if cleaned segment matches expected word (handles punctuation differences)
+            const normalizeForMatch = (w: string) => w.replace(/[.,!?;:'"()\[\]{}]/g, '').toLowerCase().trim();
+            const segmentNorm = normalizeForMatch(cleanedSegment);
+            const expectedNorm = normalizeForMatch(expectedWord);
+            
+            if (segmentNorm === expectedNorm || segmentNorm.length === 0) {
+              // Word matches - wrap it in a span with the correct word index
+              // The span will inherit formatting from parent elements (bold, italic, color, etc.)
+              const span = document.createElement('span');
+              span.textContent = segment;
+              span.className = 'inline audio-word';
+              span.setAttribute('data-word-index', globalWordIndex.toString());
+              
+              // Store ref for highlighting - this maps displayWordIndex to the DOM element
+              wordsRef.current[globalWordIndex] = span;
 
-          fragment.appendChild(span);
-          displayWordIndex++;
+              fragment.appendChild(span);
+              globalWordIndex++;
+              nodeWordIndex++;
+            } else {
+              // Word doesn't match - might be due to formatting artifacts
+              // Still wrap it but try to match with next expected word
+              const span = document.createElement('span');
+              span.textContent = segment;
+              span.className = 'inline audio-word';
+              span.setAttribute('data-word-index', globalWordIndex.toString());
+              wordsRef.current[globalWordIndex] = span;
+              fragment.appendChild(span);
+              globalWordIndex++;
+              nodeWordIndex++;
+            }
+          } else {
+            // Index out of bounds - preserve as text to maintain structure
+            fragment.appendChild(document.createTextNode(segment));
+          }
         } else {
-          // Space or non-word - preserve as text node
+          // Space or whitespace - preserve as text node
           fragment.appendChild(document.createTextNode(segment));
         }
       });
 
       // Replace the original text node with our fragment containing wrapped words
-      if (textNode.parentNode) {
+      // This preserves the parent element's formatting (bold, italic, color, etc.)
+      if (textNode.parentNode && fragment.childNodes.length > 0) {
         textNode.parentNode.replaceChild(fragment, textNode);
       }
     });
 
-    // Update container with processed HTML
+    // Update container with processed HTML (now with word spans)
     container.innerHTML = '';
     container.appendChild(tempDiv);
   }, [html, plainText, displayWords]);
@@ -212,37 +278,57 @@ export default function AudioPlayer({
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const speedMenuRef = useRef<HTMLDivElement>(null);
 
-  // Helper function to strip HTML and get plain text
-  const stripHTML = (html: string): string => {
-    if (typeof document === 'undefined') {
-      // Server-side: simple regex strip
-      return html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"');
-    }
-    const tmp = document.createElement('div');
-    tmp.innerHTML = html;
-    return tmp.textContent || tmp.innerText || '';
-  };
-
   // Check if text contains HTML
   const isHTML = useMemo(() => /<[^>]+>/.test(text), [text]);
   
   // Get plain text for word matching (strip HTML if present)
-  const plainText = useMemo(() => isHTML ? stripHTML(text) : text, [text, isHTML]);
+  // Use the same cleaning function as the API route to ensure perfect matching
+  const plainText = useMemo(() => {
+    if (isHTML) {
+      return cleanTextForAudio(text);
+    }
+    return cleanTextForAudio(text); // Still clean to remove any markdown/formatting
+  }, [text, isHTML]);
+  
+  // Store the cleaned text from timestamps for accurate word matching
+  const [timestampText, setTimestampText] = useState<string | null>(null);
   
   // Split text into words for highlighting - memoize to prevent recalculation
-  const displayWords = useMemo(() => plainText.split(/\s+/).filter(word => word.length > 0), [plainText]);
+  // Use timestamp text if available (more accurate), otherwise use cleaned display text
+  // Use the same splitting function as audio generation for perfect alignment
+  const displayWords = useMemo(() => {
+    const textToUse = timestampText || plainText;
+    return splitIntoWords(textToUse);
+  }, [plainText, timestampText]);
+  
+  // Build word mapping from display words to timestamp words for perfect alignment
+  const wordMapping = useMemo(() => {
+    if (words.length === 0 || displayWords.length === 0) {
+      return new Map<number, number>();
+    }
+    
+    // Extract words from timestamp array
+    const timestampWords = words.map(w => w.word);
+    
+    // Build mapping using the shared utility
+    return buildWordMapping(displayWords, timestampWords);
+  }, [displayWords, words]);
   
   // Parse text into structured blocks for display (numbered lists on separate lines)
+  // Use timestamp text if available for perfect alignment with audio
   const textBlocks = useMemo(() => {
     const blocks: Array<{ text: string; html?: string; isNumberedItem: boolean; wordStartIndex: number }> = [];
     
+    // Use timestamp text if available (exact text used for audio), otherwise use cleaned plainText
+    const textToParse = timestampText || plainText;
+    
     // Use plain text for parsing structure
     const numberedListPattern = /(?<=\s|^)\d+\.\s(?=[A-Z]|$)/;
-    const hasNumberedList = numberedListPattern.test(plainText);
+    const hasNumberedList = numberedListPattern.test(textToParse);
     
     if (!hasNumberedList) {
       return [{
-        text: plainText.trim(),
+        text: textToParse.trim(),
         html: isHTML ? text.trim() : undefined,
         isNumberedItem: false,
         wordStartIndex: 0
@@ -251,8 +337,8 @@ export default function AudioPlayer({
     
     // For HTML content, we need to parse differently
     if (isHTML) {
-      // Split HTML while preserving structure - use plain text for splitting
-      const parts = plainText.split(/(?=\s\d+\.\s(?=[A-Z])|^\d+\.\s(?=[A-Z]))/);
+      // Split HTML while preserving structure - use textToParse for splitting
+      const parts = textToParse.split(/(?=\s\d+\.\s(?=[A-Z])|^\d+\.\s(?=[A-Z]))/);
       
       let wordIndex = 0;
       let htmlOffset = 0;
@@ -274,12 +360,12 @@ export default function AudioPlayer({
           wordStartIndex: wordIndex,
         });
         
-        const partWords = trimmed.split(/\s+/).filter(w => w.length > 0);
+        const partWords = splitIntoWords(trimmed);
         wordIndex += partWords.length;
       }
     } else {
       // Plain text parsing (original logic)
-      const parts = plainText.split(/(?=\s\d+\.\s(?=[A-Z])|^\d+\.\s(?=[A-Z]))/);
+      const parts = textToParse.split(/(?=\s\d+\.\s(?=[A-Z])|^\d+\.\s(?=[A-Z]))/);
       
       let wordIndex = 0;
       for (const part of parts) {
@@ -293,18 +379,19 @@ export default function AudioPlayer({
           wordStartIndex: wordIndex,
         });
         
-        const partWords = trimmed.split(/\s+/).filter(w => w.length > 0);
+        const partWords = splitIntoWords(trimmed);
         wordIndex += partWords.length;
       }
     }
     
     return blocks;
-  }, [plainText, text, isHTML]);
+  }, [plainText, text, isHTML, timestampText]);
 
   // Load timestamps from URL
   useEffect(() => {
     if (!timestampsUrl) {
       setWords([]);
+      setTimestampText(null);
       return;
     }
 
@@ -314,10 +401,17 @@ export default function AudioPlayer({
         if (!response.ok) {
           console.warn('Failed to load timestamps:', response.statusText);
           setWords([]);
+          setTimestampText(null);
           return;
         }
 
         const data: TimestampsData = await response.json();
+        
+        // Store the cleaned text from timestamps - this is the exact text used for audio generation
+        // Use this for word matching instead of extracting from HTML
+        if (data.text) {
+          setTimestampText(data.text.trim());
+        }
         
         // Convert timestamp format to WordTimestamp format
         const wordTimestamps: WordTimestamp[] = [];
@@ -340,6 +434,7 @@ export default function AudioPlayer({
       } catch (error) {
         console.error('Error loading timestamps:', error);
         setWords([]);
+        setTimestampText(null);
       }
     };
 
@@ -587,17 +682,24 @@ export default function AudioPlayer({
   };
 
   // Map timestamp words to display words for highlighting
-  const getWordIndexForHighlight = (displayWordIndex: number): number | null => {
-    if (words.length === 0) return null;
+  // Use the pre-built word mapping for perfect alignment
+  const getWordIndexForHighlight = useCallback((displayWordIndex: number): number | null => {
+    if (words.length === 0 || displayWords.length === 0) return null;
     
-    // If we have timestamps, try to match by position
-    // For simplicity, we'll use direct index mapping
+    // Use the pre-built mapping for perfect alignment
+    const timestampIndex = wordMapping.get(displayWordIndex);
+    
+    if (timestampIndex !== undefined && timestampIndex !== null) {
+      return timestampIndex;
+    }
+    
+    // Fallback: if mapping doesn't exist, try direct index (shouldn't happen with perfect mapping)
     if (displayWordIndex < words.length) {
       return displayWordIndex;
     }
     
     return null;
-  };
+  }, [words, displayWords, wordMapping]);
 
   return (
     <div className="w-full">
@@ -627,7 +729,7 @@ export default function AudioPlayer({
               words={words}
               highlightedIndex={highlightedIndex}
               getWordIndexForHighlight={getWordIndexForHighlight}
-              plainText={plainText}
+              plainText={timestampText || plainText}
             />
           ) : (
             // Render plain text with word-by-word highlighting
