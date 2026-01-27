@@ -82,69 +82,299 @@ function HTMLContentWithHighlighting({
       allTextNodes.push(node as Text);
     }
 
-    // Get all text content and clean it - this should match displayWords exactly
-    const fullHtmlText = allTextNodes.map(node => node.textContent || '').join(' ');
-    const cleanedFullText = cleanTextForAudio(fullHtmlText);
-    const cleanedWords = splitIntoWords(cleanedFullText);
-    
-    // Verify word counts match - they should since plainText is cleaned from the same HTML
-    if (cleanedWords.length !== displayWords.length) {
-      console.warn(`Word count mismatch: Cleaned HTML has ${cleanedWords.length} words, displayWords has ${displayWords.length} words`);
-    }
-
-    // Now traverse HTML and wrap words sequentially
-    // Use displayWords (from cleaned plainText/timestampText) as the source of truth
-    let wordIndex = 0; // Index into displayWords array
+    // SIMPLIFIED APPROACH: Use displayWords as absolute source of truth
+    // Match HTML text nodes sequentially to displayWords by comparing cleaned versions
     wordsRef.current = new Array(displayWords.length).fill(null);
+    let globalWordIndex = 0; // Tracks position in displayWords array
     
-    // Process each text node and extract words sequentially
+    // Process each text node sequentially
     allTextNodes.forEach((textNode) => {
-      const text = textNode.textContent || '';
-      if (!text.trim()) {
-        return; // Skip empty text nodes
+      const nodeText = textNode.textContent || '';
+      if (!nodeText.trim() || globalWordIndex >= displayWords.length) {
+        return;
       }
       
-      // Clean this node's text to get words
-      const cleanedNodeText = cleanTextForAudio(text);
+      // Clean this node's text
+      const cleanedNodeText = cleanTextForAudio(nodeText);
       const nodeWords = splitIntoWords(cleanedNodeText);
       
       if (nodeWords.length === 0) {
-        return; // No words in this node
+        // No words - might be just punctuation or contractions in a separate text node
+        const trimmed = nodeText.trim();
+        // Check if this is punctuation-only (including all types: . , ! ? ; : ' " ( ) [ ] { } etc.)
+        // Also check for contractions like 's, 't, 're, 've, 'll, 'd, 'm
+        const isPunctuationOnly = /^[.,!?;:'"()\[\]{}…—–\-]+$/.test(trimmed);
+        const isContraction = /^'[sstdmrevel]+$/i.test(trimmed); // 's, 't, 're, 've, 'll, 'd, 'm, etc.
+        
+        if (trimmed.length > 0 && (isPunctuationOnly || isContraction)) {
+          // Check if CURRENT expected display word ends with this punctuation
+          // (If a word was wrapped without punctuation in previous node, globalWordIndex 
+          //  still points to that word, so we check current)
+          if (globalWordIndex < displayWords.length) {
+            const currentDisplayWord = displayWords[globalWordIndex] || '';
+            const currentSpan = wordsRef.current[globalWordIndex];
+            
+            // First check if span has stored expected punctuation attribute
+            let expectedPunct = '';
+            if (currentSpan) {
+              expectedPunct = currentSpan.getAttribute('data-expected-punct') || '';
+            }
+            
+            // Check if current word ends with this punctuation/contraction
+            // For contractions like "'s", check if word ends with the full contraction
+            // For punctuation, check if word ends with any punctuation char
+            let wordEndsWithMatch = false;
+            
+            if (isContraction) {
+              // For contractions, check if the word ends with this exact contraction
+              wordEndsWithMatch = currentDisplayWord.endsWith(trimmed);
+            } else {
+              // For punctuation, check if word ends with any punctuation char
+              const punctuationChars = trimmed.split('');
+              wordEndsWithMatch = punctuationChars.some(char => currentDisplayWord.endsWith(char));
+            }
+            
+            // Also check if stored expected punctuation matches
+            const storedPunctMatches = expectedPunct && (
+              isContraction ? expectedPunct.includes(trimmed) : 
+              trimmed.split('').some(char => expectedPunct.includes(char))
+            );
+            
+            if (wordEndsWithMatch || storedPunctMatches) {
+              // Punctuation is attached to current word - append to current span
+              if (currentSpan) {
+                // Append punctuation to the span we created in previous text node
+                currentSpan.textContent = (currentSpan.textContent || '') + nodeText;
+                // Remove the expected punctuation attribute since we've matched it
+                currentSpan.removeAttribute('data-expected-punct');
+                // Now advance globalWordIndex since we've completed this word
+                globalWordIndex++;
+                if (textNode.parentNode) {
+                  textNode.parentNode.removeChild(textNode);
+                }
+                return;
+              } else {
+                // Span doesn't exist yet - create it with punctuation
+                const fragment = document.createDocumentFragment();
+                const span = document.createElement('span');
+                span.textContent = nodeText;
+                span.className = 'inline audio-word';
+                span.setAttribute('data-word-index', globalWordIndex.toString());
+                wordsRef.current[globalWordIndex] = span;
+                fragment.appendChild(span);
+                globalWordIndex++;
+                if (textNode.parentNode && fragment.childNodes.length > 0) {
+                  textNode.parentNode.replaceChild(fragment, textNode);
+                }
+                return;
+              }
+            }
+          }
+          
+          // Check if PREVIOUS display word ends with this punctuation/contraction (fallback)
+          if (globalWordIndex > 0) {
+            const prevDisplayWord = displayWords[globalWordIndex - 1] || '';
+            // Check if previous word ends with this punctuation/contraction
+            let prevWordEndsWithMatch = false;
+            
+            if (isContraction) {
+              // For contractions, check if the word ends with this exact contraction
+              prevWordEndsWithMatch = prevDisplayWord.endsWith(trimmed);
+            } else {
+              // For punctuation, check if word ends with any punctuation char
+              const punctuationChars = trimmed.split('');
+              prevWordEndsWithMatch = punctuationChars.some(char => prevDisplayWord.endsWith(char));
+            }
+            
+            if (prevWordEndsWithMatch) {
+              // Punctuation is attached to previous word - append to previous span
+              const prevSpan = wordsRef.current[globalWordIndex - 1];
+              if (prevSpan) {
+                prevSpan.textContent = (prevSpan.textContent || '') + nodeText;
+                // Don't advance globalWordIndex - it's already advanced
+                if (textNode.parentNode) {
+                  textNode.parentNode.removeChild(textNode);
+                }
+                return;
+              }
+            }
+          }
+          
+          // Punctuation doesn't match - wrap as separate word
+          if (globalWordIndex < displayWords.length) {
+            const fragment = document.createDocumentFragment();
+            const span = document.createElement('span');
+            span.textContent = nodeText;
+            span.className = 'inline audio-word';
+            span.setAttribute('data-word-index', globalWordIndex.toString());
+            wordsRef.current[globalWordIndex] = span;
+            fragment.appendChild(span);
+            globalWordIndex++;
+            if (textNode.parentNode && fragment.childNodes.length > 0) {
+              textNode.parentNode.replaceChild(fragment, textNode);
+            }
+          }
+        } else if (trimmed.length > 0) {
+          // Not punctuation-only but no words - might be whitespace or other characters
+          // Preserve as text node
+          const fragment = document.createDocumentFragment();
+          fragment.appendChild(document.createTextNode(nodeText));
+          if (textNode.parentNode && fragment.childNodes.length > 0) {
+            textNode.parentNode.replaceChild(fragment, textNode);
+          }
+        }
+        return;
       }
       
-      // Split original text to preserve formatting
-      const segments = text.split(/(\s+)/);
+      // Split node text by whitespace and match to displayWords
+      const segments = nodeText.split(/(\s+)/);
       const fragment = document.createDocumentFragment();
-      let nodeWordIdx = 0; // Index into nodeWords array
-
+      let nodeWordIdx = 0; // Index into nodeWords
+      
       segments.forEach((segment) => {
         const trimmed = segment.trim();
         const isWord = trimmed.length > 0 && !/^\s+$/.test(segment);
         
-        if (isWord && nodeWordIdx < nodeWords.length && wordIndex < displayWords.length) {
-          // This is a word - wrap it with the current wordIndex
-          // The span inherits formatting from parent elements (bold, italic, color, etc.)
-          const span = document.createElement('span');
-          span.textContent = segment;
-          span.className = 'inline audio-word';
-          span.setAttribute('data-word-index', wordIndex.toString());
+        if (isWord && nodeWordIdx < nodeWords.length && globalWordIndex < displayWords.length) {
+          const cleanedSegment = cleanTextForAudio(segment);
+          const expectedDisplayWord = displayWords[globalWordIndex];
           
-          // Store ref for highlighting
-          wordsRef.current[wordIndex] = span;
-
-          fragment.appendChild(span);
-          wordIndex++;
-          nodeWordIdx++;
+          // Normalize for comparison (remove punctuation except apostrophes, lowercase)
+          // IMPORTANT: Preserve apostrophes to handle contractions correctly
+          const normalize = (w: string) => w.replace(/[.,!?;:"()\[\]{}]/g, '').toLowerCase().trim();
+          const segmentNorm = normalize(cleanedSegment);
+          const expectedNorm = normalize(expectedDisplayWord);
+          
+          // Check for contractions - if expected word has a contraction, extract base word
+          const contractionRegex = /'[sstdmrevel]+$/i;
+          const expectedHasContraction = contractionRegex.test(expectedDisplayWord);
+          const expectedBase = expectedHasContraction ? 
+            expectedDisplayWord.replace(/'[sstdmrevel]+$/i, '').toLowerCase().trim() : 
+            expectedDisplayWord.toLowerCase().trim();
+          
+          // Normalize segment the same way (remove punctuation except apostrophes)
+          const segmentBase = normalize(cleanedSegment);
+          
+          // Check if segment matches expected word (with or without contraction)
+          // Or if segment is the base word when expected has contraction
+          const exactMatch = segmentNorm === expectedNorm && segmentNorm.length > 0;
+          const segmentIsBaseOfExpected = expectedHasContraction && 
+            segmentBase === expectedBase && segmentBase.length > 0;
+          
+          if (exactMatch || segmentIsBaseOfExpected) {
+            // Exact match after normalization
+            // Check if expected word has punctuation/contraction that this segment doesn't have
+            // Check for all punctuation types: . , ! ? ; : ' " ( ) [ ] { } etc.
+            // Also check for contractions like 's, 't, 're, 've, 'll, 'd, 'm
+            const punctuationRegex = /[.,!?;:'"()\[\]{}…—–\-]$/;
+            const contractionRegex = /'[sstdmrevel]+$/i; // 's, 't, 're, 've, 'll, 'd, 'm, etc.
+            const expectedHasPunct = punctuationRegex.test(expectedDisplayWord);
+            const expectedHasContraction = contractionRegex.test(expectedDisplayWord);
+            const segmentHasPunct = punctuationRegex.test(segment);
+            const segmentHasContraction = contractionRegex.test(segment);
+            
+            // Check if expected word has punctuation/contraction that segment doesn't have
+            if ((expectedHasPunct || expectedHasContraction) && !segmentHasPunct && !segmentHasContraction) {
+              // Expected word has punctuation/contraction but segment doesn't - it's in a later text node
+              // Extract what punctuation/contraction the expected word ends with
+              const expectedContractionMatch = expectedDisplayWord.match(/'[sstdmrevel]+$/i);
+              const expectedPunctMatch = expectedDisplayWord.match(/[.,!?;:'"()\[\]{}…—–\-]+$/);
+              const expectedPunct = expectedContractionMatch ? expectedContractionMatch[0] : 
+                                   (expectedPunctMatch ? expectedPunctMatch[0] : '');
+              
+              // Wrap segment now, punctuation/contraction will be appended later when we encounter it
+              const span = document.createElement('span');
+              span.textContent = segment;
+              span.className = 'inline audio-word';
+              span.setAttribute('data-word-index', globalWordIndex.toString());
+              span.setAttribute('data-expected-punct', expectedPunct); // Store expected punctuation/contraction for later matching
+              wordsRef.current[globalWordIndex] = span;
+              fragment.appendChild(span);
+              // DON'T advance globalWordIndex yet - punctuation/contraction will be appended to this span
+              // We'll advance it when we encounter the punctuation/contraction node in the next text node
+              nodeWordIdx++;
+            } else if (segmentIsBaseOfExpected) {
+              // Segment is the base word and expected has contraction - wrap it and wait for contraction
+              const expectedContractionMatch = expectedDisplayWord.match(/'[sstdmrevel]+$/i);
+              const expectedPunct = expectedContractionMatch ? expectedContractionMatch[0] : '';
+              
+              const span = document.createElement('span');
+              span.textContent = segment;
+              span.className = 'inline audio-word';
+              span.setAttribute('data-word-index', globalWordIndex.toString());
+              span.setAttribute('data-expected-punct', expectedPunct);
+              wordsRef.current[globalWordIndex] = span;
+              fragment.appendChild(span);
+              // DON'T advance globalWordIndex yet - contraction will be appended later
+              nodeWordIdx++;
+            } else {
+              // Normal match (both have punctuation or both don't) - wrap it
+              const span = document.createElement('span');
+              span.textContent = segment;
+              span.className = 'inline audio-word';
+              span.setAttribute('data-word-index', globalWordIndex.toString());
+              wordsRef.current[globalWordIndex] = span;
+              fragment.appendChild(span);
+              globalWordIndex++;
+              nodeWordIdx++;
+            }
+          } else {
+            // No exact match - but check if segment might be part of expected word with contraction
+            const contractionRegex = /'[sstdmrevel]+$/i;
+            const expectedHasContraction = contractionRegex.test(expectedDisplayWord);
+            
+            if (expectedHasContraction) {
+              // Check if segment is the base word (without contraction)
+              const expectedBase = expectedDisplayWord.replace(/'[sstdmrevel]+$/i, '').toLowerCase().trim();
+              const segmentBase = cleanedSegment.toLowerCase().trim();
+              
+              if (expectedBase === segmentBase) {
+                // Segment is the base word, expected has contraction - wrap and wait for contraction
+                const expectedContractionMatch = expectedDisplayWord.match(/'[sstdmrevel]+$/i);
+                const expectedPunct = expectedContractionMatch ? expectedContractionMatch[0] : '';
+                
+                const span = document.createElement('span');
+                span.textContent = segment;
+                span.className = 'inline audio-word';
+                span.setAttribute('data-word-index', globalWordIndex.toString());
+                span.setAttribute('data-expected-punct', expectedPunct);
+                wordsRef.current[globalWordIndex] = span;
+                fragment.appendChild(span);
+                // DON'T advance globalWordIndex yet - contraction will be appended later
+                nodeWordIdx++;
+              } else {
+                // No match - wrap it anyway to maintain structure
+                const span = document.createElement('span');
+                span.textContent = segment;
+                span.className = 'inline audio-word';
+                span.setAttribute('data-word-index', globalWordIndex.toString());
+                wordsRef.current[globalWordIndex] = span;
+                fragment.appendChild(span);
+                globalWordIndex++;
+                nodeWordIdx++;
+              }
+            } else {
+              // No match - wrap it anyway to maintain structure
+              const span = document.createElement('span');
+              span.textContent = segment;
+              span.className = 'inline audio-word';
+              span.setAttribute('data-word-index', globalWordIndex.toString());
+              wordsRef.current[globalWordIndex] = span;
+              fragment.appendChild(span);
+              globalWordIndex++;
+              nodeWordIdx++;
+            }
+          }
         } else if (!isWord) {
-          // Space or whitespace - preserve as text node
+          // Space - preserve as text
           fragment.appendChild(document.createTextNode(segment));
         } else {
-          // Word but index mismatch - preserve as text to maintain structure
+          // Word but out of bounds - preserve as text
           fragment.appendChild(document.createTextNode(segment));
         }
       });
-
-      // Replace the original text node with our fragment
+      
+      // Replace the original text node
       if (textNode.parentNode && fragment.childNodes.length > 0) {
         textNode.parentNode.replaceChild(fragment, textNode);
       }
