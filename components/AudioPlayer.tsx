@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { cleanTextForAudio, splitIntoWords, buildWordMapping } from '@/lib/text-cleaning';
+import { cleanTextForAudio, splitIntoWords } from '@/lib/text-cleaning';
 
 interface WordTimestamp {
   word: string;
@@ -59,8 +59,8 @@ function HTMLContentWithHighlighting({
   }, [plainText]);
 
   // Initial render: parse HTML and wrap words in spans
-  // This ensures word indices match exactly with displayWords array
-  // CRITICAL: Handle formatted text (bold, italic, underline, color) correctly
+  // CRITICAL: Use cleaned plainText (which matches timestamp text) as source of truth
+  // Match HTML words sequentially to cleaned words, preserving formatting
   useEffect(() => {
     if (!containerRef.current || typeof document === 'undefined') return;
 
@@ -68,9 +68,8 @@ function HTMLContentWithHighlighting({
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
 
-    // Strategy: Extract ALL text from HTML first (ignoring formatting tags)
-    // Then match words sequentially while preserving formatting
-    // This handles formatted text correctly (bold, italic, underline, color)
+    // Extract ALL text from HTML (ignoring formatting) and clean it
+    // This gives us the exact word sequence that matches timestamps
     const allTextNodes: Text[] = [];
     const walker = document.createTreeWalker(
       tempDiv,
@@ -83,104 +82,75 @@ function HTMLContentWithHighlighting({
       allTextNodes.push(node as Text);
     }
 
-    // Get all text content from HTML (without formatting) to verify word count
+    // Get all text content and clean it - this should match displayWords exactly
     const fullHtmlText = allTextNodes.map(node => node.textContent || '').join(' ');
     const cleanedFullText = cleanTextForAudio(fullHtmlText);
-    const fullWords = splitIntoWords(cleanedFullText);
+    const cleanedWords = splitIntoWords(cleanedFullText);
     
-    // Verify word counts match
-    if (fullWords.length !== displayWords.length) {
-      console.warn(`Word count mismatch: HTML has ${fullWords.length} words, displayWords has ${displayWords.length} words`);
+    // Verify word counts match - they should since plainText is cleaned from the same HTML
+    if (cleanedWords.length !== displayWords.length) {
+      console.warn(`Word count mismatch: Cleaned HTML has ${cleanedWords.length} words, displayWords has ${displayWords.length} words`);
     }
 
-    // Now traverse HTML and wrap words, matching sequentially with displayWords
-    // Use a global word index that tracks across all text nodes
-    let globalWordIndex = 0;
+    // Now traverse HTML and wrap words sequentially
+    // Use displayWords (from cleaned plainText/timestampText) as the source of truth
+    let wordIndex = 0; // Index into displayWords array
     wordsRef.current = new Array(displayWords.length).fill(null);
     
-    // Process each text node and extract words, matching with global word index
+    // Process each text node and extract words sequentially
     allTextNodes.forEach((textNode) => {
       const text = textNode.textContent || '';
       if (!text.trim()) {
-        // Empty text node, skip but preserve it
-        return;
+        return; // Skip empty text nodes
       }
       
-      // Clean this node's text to get the words it contains
+      // Clean this node's text to get words
       const cleanedNodeText = cleanTextForAudio(text);
       const nodeWords = splitIntoWords(cleanedNodeText);
       
       if (nodeWords.length === 0) {
-        // No words in this node, preserve as-is
-        return;
+        return; // No words in this node
       }
       
-      // Split the original text to preserve formatting while matching words
-      // We need to match each word in the original text with the cleaned words
+      // Split original text to preserve formatting
       const segments = text.split(/(\s+)/);
       const fragment = document.createDocumentFragment();
-      let nodeWordIndex = 0;
+      let nodeWordIdx = 0; // Index into nodeWords array
 
       segments.forEach((segment) => {
         const trimmed = segment.trim();
         const isWord = trimmed.length > 0 && !/^\s+$/.test(segment);
         
-        if (isWord) {
-          // This is a word - check if it matches the expected word from cleaned text
-          if (nodeWordIndex < nodeWords.length && globalWordIndex < displayWords.length) {
-            // Verify the word matches (normalize for comparison)
-            const cleanedSegment = cleanTextForAudio(segment).trim();
-            const expectedWord = nodeWords[nodeWordIndex];
-            
-            // Match if cleaned segment matches expected word (handles punctuation differences)
-            const normalizeForMatch = (w: string) => w.replace(/[.,!?;:'"()\[\]{}]/g, '').toLowerCase().trim();
-            const segmentNorm = normalizeForMatch(cleanedSegment);
-            const expectedNorm = normalizeForMatch(expectedWord);
-            
-            if (segmentNorm === expectedNorm || segmentNorm.length === 0) {
-              // Word matches - wrap it in a span with the correct word index
-              // The span will inherit formatting from parent elements (bold, italic, color, etc.)
-              const span = document.createElement('span');
-              span.textContent = segment;
-              span.className = 'inline audio-word';
-              span.setAttribute('data-word-index', globalWordIndex.toString());
-              
-              // Store ref for highlighting - this maps displayWordIndex to the DOM element
-              wordsRef.current[globalWordIndex] = span;
+        if (isWord && nodeWordIdx < nodeWords.length && wordIndex < displayWords.length) {
+          // This is a word - wrap it with the current wordIndex
+          // The span inherits formatting from parent elements (bold, italic, color, etc.)
+          const span = document.createElement('span');
+          span.textContent = segment;
+          span.className = 'inline audio-word';
+          span.setAttribute('data-word-index', wordIndex.toString());
+          
+          // Store ref for highlighting
+          wordsRef.current[wordIndex] = span;
 
-              fragment.appendChild(span);
-              globalWordIndex++;
-              nodeWordIndex++;
-            } else {
-              // Word doesn't match - might be due to formatting artifacts
-              // Still wrap it but try to match with next expected word
-              const span = document.createElement('span');
-              span.textContent = segment;
-              span.className = 'inline audio-word';
-              span.setAttribute('data-word-index', globalWordIndex.toString());
-              wordsRef.current[globalWordIndex] = span;
-              fragment.appendChild(span);
-              globalWordIndex++;
-              nodeWordIndex++;
-            }
-          } else {
-            // Index out of bounds - preserve as text to maintain structure
-            fragment.appendChild(document.createTextNode(segment));
-          }
-        } else {
+          fragment.appendChild(span);
+          wordIndex++;
+          nodeWordIdx++;
+        } else if (!isWord) {
           // Space or whitespace - preserve as text node
+          fragment.appendChild(document.createTextNode(segment));
+        } else {
+          // Word but index mismatch - preserve as text to maintain structure
           fragment.appendChild(document.createTextNode(segment));
         }
       });
 
-      // Replace the original text node with our fragment containing wrapped words
-      // This preserves the parent element's formatting (bold, italic, color, etc.)
+      // Replace the original text node with our fragment
       if (textNode.parentNode && fragment.childNodes.length > 0) {
         textNode.parentNode.replaceChild(fragment, textNode);
       }
     });
 
-    // Update container with processed HTML (now with word spans)
+    // Update container with processed HTML
     container.innerHTML = '';
     container.appendChild(tempDiv);
   }, [html, plainText, displayWords]);
@@ -294,24 +264,93 @@ export default function AudioPlayer({
   const [timestampText, setTimestampText] = useState<string | null>(null);
   
   // Split text into words for highlighting - memoize to prevent recalculation
-  // Use timestamp text if available (more accurate), otherwise use cleaned display text
+  // Use timestamp text if available (more accurate - exact text used for audio generation)
+  // Otherwise use cleaned plainText (which should match timestamp text)
   // Use the same splitting function as audio generation for perfect alignment
   const displayWords = useMemo(() => {
     const textToUse = timestampText || plainText;
     return splitIntoWords(textToUse);
   }, [plainText, timestampText]);
   
-  // Build word mapping from display words to timestamp words for perfect alignment
+  // Build word mapping to handle punctuation differences between display words and timestamp words
+  // Timestamp words might have punctuation as separate tokens (e.g., ["Hello", ",", "world"])
+  // While display words might have punctuation attached (e.g., ["Hello,", "world"])
   const wordMapping = useMemo(() => {
     if (words.length === 0 || displayWords.length === 0) {
       return new Map<number, number>();
     }
     
-    // Extract words from timestamp array
     const timestampWords = words.map(w => w.word);
+    const mapping = new Map<number, number>();
     
-    // Build mapping using the shared utility
-    return buildWordMapping(displayWords, timestampWords);
+    // If counts match exactly, use direct 1:1 mapping
+    if (displayWords.length === timestampWords.length) {
+      for (let i = 0; i < displayWords.length; i++) {
+        mapping.set(i, i);
+      }
+      return mapping;
+    }
+    
+    // Counts don't match - build mapping accounting for punctuation differences
+    let displayIdx = 0;
+    let timestampIdx = 0;
+    
+    while (displayIdx < displayWords.length && timestampIdx < timestampWords.length) {
+      const displayWord = displayWords[displayIdx];
+      const timestampWord = timestampWords[timestampIdx];
+      
+      // Normalize words for comparison (remove punctuation, lowercase)
+      const normalizeWord = (w: string) => w.replace(/[.,!?;:'"()\[\]{}]/g, '').toLowerCase().trim();
+      const displayNorm = normalizeWord(displayWord);
+      const timestampNorm = normalizeWord(timestampWord);
+      
+      // Check if words match (ignoring punctuation)
+      if (displayNorm === timestampNorm && displayNorm.length > 0) {
+        // Words match - map them
+        mapping.set(displayIdx, timestampIdx);
+        displayIdx++;
+        timestampIdx++;
+      } else {
+        // Check if timestamp word is just punctuation
+        const timestampTrimmed = timestampWord.trim();
+        if (/^[.,!?;:'"()\[\]{}]+$/.test(timestampTrimmed)) {
+          // Timestamp word is punctuation - map it to current display word
+          // (punctuation is part of the display word, so they share the same timestamp)
+          if (!mapping.has(displayIdx)) {
+            mapping.set(displayIdx, timestampIdx);
+          }
+          timestampIdx++; // Skip punctuation token, don't advance display index
+        } else if (displayNorm.length === 0) {
+          // Display word is empty or just punctuation - skip it
+          displayIdx++;
+        } else if (timestampNorm.length === 0) {
+          // Timestamp word is empty or just punctuation - skip it
+          timestampIdx++;
+        } else {
+          // Check if display word contains timestamp word (punctuation attached to display word)
+          if (displayNorm.includes(timestampNorm) || timestampNorm.includes(displayNorm)) {
+            // Partial match - map them
+            mapping.set(displayIdx, timestampIdx);
+            displayIdx++;
+            timestampIdx++;
+          } else {
+            // No match - advance display index and try next timestamp word
+            // This handles cases where display has fewer words due to punctuation merging
+            displayIdx++;
+          }
+        }
+      }
+    }
+    
+    // Fill in any remaining display words with the last timestamp index
+    while (displayIdx < displayWords.length) {
+      if (timestampIdx > 0) {
+        mapping.set(displayIdx, timestampIdx - 1);
+      }
+      displayIdx++;
+    }
+    
+    return mapping;
   }, [displayWords, words]);
   
   // Parse text into structured blocks for display (numbered lists on separate lines)
@@ -453,10 +492,47 @@ export default function AudioPlayer({
         onTimeUpdate(current, audio.duration || 0);
       }
 
-      // Simple highlighting: Find the word that should be highlighted based on current time
-      const currentWordIndex = words.findIndex(
-        (w) => current >= w.startTime && current < w.endTime
-      );
+      // Find the word that should be highlighted based on current time
+      // Strategy: Find the word that is currently being spoken
+      // Highlight when current time is >= word startTime and < next word's startTime (or <= current word's endTime)
+      let currentWordIndex = -1;
+      
+      if (words.length > 0) {
+        // Find the word where current time falls within its time range
+        // Use >= startTime and <= endTime to include both boundaries
+        for (let i = 0; i < words.length; i++) {
+          const word = words[i];
+          const nextWord = i < words.length - 1 ? words[i + 1] : null;
+          
+          // Check if current time is within this word's range
+          // Or if we're past this word's start but before the next word starts
+          if (current >= word.startTime) {
+            if (nextWord) {
+              // If there's a next word, highlight until its start
+              if (current < nextWord.startTime) {
+                currentWordIndex = i;
+                break;
+              }
+            } else {
+              // Last word - highlight until its end
+              if (current <= word.endTime) {
+                currentWordIndex = i;
+                break;
+              }
+            }
+          }
+        }
+        
+        // Fallback: if no word found, find the closest word that has started
+        if (currentWordIndex === -1) {
+          for (let i = words.length - 1; i >= 0; i--) {
+            if (current >= words[i].startTime) {
+              currentWordIndex = i;
+              break;
+            }
+          }
+        }
+      }
 
       if (currentWordIndex !== -1) {
         if (highlightedIndex !== currentWordIndex) {
@@ -468,6 +544,7 @@ export default function AudioPlayer({
           }
         }
       } else {
+        // No word found - clear highlighting
         if (highlightedIndex !== null) {
           setHighlightedIndex(null);
         }
@@ -522,7 +599,8 @@ export default function AudioPlayer({
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
 
     // Use interval for more precise updates
-    intervalRef.current = setInterval(updateTime, 50);
+    // Reduced interval for better synchronization (25ms = 40 updates per second)
+    intervalRef.current = setInterval(updateTime, 25);
 
     return () => {
       audio.removeEventListener('timeupdate', handleTimeUpdate);
@@ -669,9 +747,40 @@ export default function AudioPlayer({
     setCurrentTime(newTime);
 
     // Update highlighting immediately when seeking
-    const currentWordIndex = words.findIndex(
-      (w) => newTime >= w.startTime && newTime < w.endTime
-    );
+    // Use same logic as updateTime for consistency
+    let currentWordIndex = -1;
+    
+    if (words.length > 0) {
+      for (let i = 0; i < words.length; i++) {
+        const word = words[i];
+        const nextWord = i < words.length - 1 ? words[i + 1] : null;
+        
+        if (newTime >= word.startTime) {
+          if (nextWord) {
+            if (newTime < nextWord.startTime) {
+              currentWordIndex = i;
+              break;
+            }
+          } else {
+            if (newTime <= word.endTime) {
+              currentWordIndex = i;
+              break;
+            }
+          }
+        }
+      }
+      
+      // Fallback: find the closest word that has started
+      if (currentWordIndex === -1) {
+        for (let i = words.length - 1; i >= 0; i--) {
+          if (newTime >= words[i].startTime) {
+            currentWordIndex = i;
+            break;
+          }
+        }
+      }
+    }
+    
     setHighlightedIndex(currentWordIndex !== -1 ? currentWordIndex : null);
   };
 
@@ -682,18 +791,18 @@ export default function AudioPlayer({
   };
 
   // Map timestamp words to display words for highlighting
-  // Use the pre-built word mapping for perfect alignment
+  // Use the pre-built word mapping that handles punctuation differences
   const getWordIndexForHighlight = useCallback((displayWordIndex: number): number | null => {
     if (words.length === 0 || displayWords.length === 0) return null;
     
-    // Use the pre-built mapping for perfect alignment
+    // Use the pre-built mapping that accounts for punctuation differences
     const timestampIndex = wordMapping.get(displayWordIndex);
     
     if (timestampIndex !== undefined && timestampIndex !== null) {
       return timestampIndex;
     }
     
-    // Fallback: if mapping doesn't exist, try direct index (shouldn't happen with perfect mapping)
+    // Fallback: if mapping doesn't exist, try direct index
     if (displayWordIndex < words.length) {
       return displayWordIndex;
     }
