@@ -130,6 +130,7 @@ export default function PracticeExamPage() {
                 onContinue={handleGoToEndOfCourse}
                 onPracticeAgain={handlePracticeAgain}
                 retryButtonText="Take Practice Quiz Again"
+                shuffleKey={quizRetryKey}
               />
             </>
           )}

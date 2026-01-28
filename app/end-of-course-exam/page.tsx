@@ -16,6 +16,7 @@ export default function EndOfCourseExamPage() {
   const [checkingCompletion, setCheckingCompletion] = useState(true);
   const [totalChapters, setTotalChapters] = useState<number | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [shuffleKey, setShuffleKey] = useState(0);
 
   useEffect(() => {
     checkCompletion();
@@ -114,6 +115,8 @@ export default function EndOfCourseExamPage() {
         }));
         
         setQuestions(formattedQuestions);
+        // Increment shuffleKey to ensure questions are re-shuffled even if array reference is the same
+        setShuffleKey(prev => prev + 1);
         setLoading(false);
         console.log("[End-of-Course Exam] Questions loaded successfully, ready to show quiz");
       } else {
@@ -251,6 +254,7 @@ export default function EndOfCourseExamPage() {
                 onComplete={handleQuizComplete}
                 onShowResults={handleShowResults}
                 shuffle={true}
+                shuffleKey={shuffleKey}
                 disableRetry={true}
                 disableBack={true}
               />

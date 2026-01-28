@@ -47,8 +47,12 @@ export async function GET(request: NextRequest) {
           orderBy: { order: 'asc' },
         })
 
-        // Shuffle and select the required number
-        const shuffled = [...chapterQuestions].sort(() => Math.random() - 0.5)
+        // Shuffle and select the required number using Fisher-Yates algorithm
+        const shuffled = [...chapterQuestions];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
         const selected = shuffled.slice(0, Math.min(questionCount, chapterQuestions.length))
 
         selectedQuestions.push(...selected.map((q) => ({
@@ -94,8 +98,12 @@ export async function GET(request: NextRequest) {
       source: 'additional',
     })))
 
-    // Shuffle all questions together
-    const shuffledAll = [...selectedQuestions].sort(() => Math.random() - 0.5)
+    // Shuffle all questions together using Fisher-Yates algorithm
+    const shuffledAll = [...selectedQuestions];
+    for (let i = shuffledAll.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffledAll[i], shuffledAll[j]] = [shuffledAll[j], shuffledAll[i]];
+    }
 
     return NextResponse.json({ 
       questions: shuffledAll,

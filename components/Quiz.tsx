@@ -35,6 +35,7 @@ interface QuizProps {
   showCharacter?: boolean;
   searchHighlight?: string; // Search query to highlight in questions and options
   shuffle?: boolean; // Whether to shuffle questions
+  shuffleKey?: number | string; // Key to force re-shuffling when changed (e.g., retry counter)
   onRetry?: () => void; // Callback for retry action
   onContinue?: () => void; // Callback for continue action
   onPracticeAgain?: () => void; // Callback for practice again (when passed)
@@ -48,15 +49,27 @@ interface QuizProps {
   isLastChapter?: boolean; // Whether this is the last chapter
 }
 
-export default function Quiz({ questions, onComplete, showCharacter = true, searchHighlight, shuffle = false, onRetry, onContinue, onPracticeAgain, onContinueToNextChapter, onGoToExams, onShowResults, disableRetry = false, disableBack = false, retryButtonText, chapterNumber, isLastChapter }: QuizProps) {
+export default function Quiz({ questions, onComplete, showCharacter = true, searchHighlight, shuffle = false, shuffleKey, onRetry, onContinue, onPracticeAgain, onContinueToNextChapter, onGoToExams, onShowResults, disableRetry = false, disableBack = false, retryButtonText, chapterNumber, isLastChapter }: QuizProps) {
   const router = useRouter();
-  // Shuffle questions if shuffle prop is true - recalculate when shuffle changes
+  // Shuffle questions if shuffle prop is true - recalculate when shuffle or shuffleKey changes
+  // Use Fisher-Yates shuffle algorithm for better randomization
+  // shuffleKey forces re-shuffling when changed (e.g., on retry)
   const shuffledQuestions = useMemo(() => {
-    if (shuffle) {
-      return [...questions].sort(() => Math.random() - 0.5);
+    if (shuffle && questions.length > 0) {
+      // Fisher-Yates shuffle algorithm for true randomization
+      const shuffled = [...questions];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        // Use crypto.getRandomValues for better randomness if available, fallback to Math.random
+        const randomValue = typeof crypto !== 'undefined' && crypto.getRandomValues 
+          ? crypto.getRandomValues(new Uint32Array(1))[0] / (0xFFFFFFFF + 1)
+          : Math.random();
+        const j = Math.floor(randomValue * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
     }
     return questions;
-  }, [questions, shuffle]);
+  }, [questions, shuffle, shuffleKey]);
   
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
