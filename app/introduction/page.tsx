@@ -171,12 +171,6 @@ export default function IntroductionPage() {
                   audioUrl={audioUrl}
                   timestampsUrl={timestampsUrl}
                   autoPlay={true}
-                  onComplete={() => {
-                    // Audio completed, automatically navigate to Chapter 1
-                    setTimeout(() => {
-                      router.push("/chapter/1");
-                    }, 500);
-                  }}
                   highlightQuery={searchHighlight}
                 />
               )}

@@ -695,21 +695,10 @@ export default function ChapterPage() {
   const currentIndex = sections.findIndex(s => s.id === currentSection);
 
   const handleAudioComplete = () => {
+    // Audio completed - stop playing but don't auto-navigate
+    // Student must manually press button to continue or take quiz
     setActivePlayingSectionId(null);
     setHasAutoPlayedFirst(false);
-    
-    const currentIndex = sections.findIndex(s => s.id === currentSection);
-    if (currentIndex < sections.length - 1) {
-      setTimeout(() => {
-        const nextSection = sections[currentIndex + 1];
-        setCurrentSection(nextSection.id);
-        setHasAutoPlayedFirst(false);
-      }, 500);
-    } else {
-      setTimeout(() => {
-        setShowQuiz(true);
-      }, 500);
-    }
   };
 
   useEffect(() => {
