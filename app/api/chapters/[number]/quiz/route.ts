@@ -19,13 +19,17 @@ export async function GET(
       request.headers.get('authorization')?.replace('Bearer ', '') ||
       request.cookies.get('auth-token')?.value
 
-    if (!token) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    // Chapter 1 quiz is accessible without authentication (guest access)
+    // Registration is prompted AFTER completing the first quiz
+    if (chapterNumber !== 1) {
+      if (!token) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      }
 
-    const decoded = verifyToken(token)
-    if (!decoded) {
-      return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+      const decoded = verifyToken(token)
+      if (!decoded) {
+        return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+      }
     }
 
     // Get chapter first

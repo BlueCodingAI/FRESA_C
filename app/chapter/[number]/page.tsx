@@ -500,8 +500,9 @@ export default function ChapterPage() {
         .find((row) => row.startsWith("auth-token="))
         ?.split("=")[1];
       
-      if (!token) {
-        // User not logged in - show registration prompt
+      // Chapter 1 quiz is accessible without login - registration is prompted AFTER completion
+      if (!token && chapterNumber !== 1) {
+        // User not logged in and not Chapter 1 - show registration prompt
         setShowQuizRegistrationPrompt(true);
         return;
       }
@@ -728,16 +729,20 @@ export default function ChapterPage() {
         .find((row) => row.startsWith("auth-token="))
         ?.split("=")[1];
 
-      if (!token) {
+      // Chapter 1 quiz is accessible without login - registration is prompted AFTER completion
+      if (!token && chapterNumber !== 1) {
         setShowRegistrationPrompt(true);
         setShowQuiz(false);
         return;
       }
 
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers.Authorization = `Bearer ${token}`;
+      }
+
       const response = await fetch(`/api/chapters/${chapterNumber}/quiz`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers,
       });
 
       if (response.ok) {
