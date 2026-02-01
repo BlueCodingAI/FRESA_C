@@ -235,6 +235,25 @@ function HTMLContentWithHighlighting({
         const trimmed = segment.trim();
         const isWord = trimmed.length > 0 && !/^\s+$/.test(segment);
         
+        // Punctuation-only segment (e.g. "," after "(NAR)") - append to current span if it has data-expected-punct
+        const isPunctuationOnly = /^[.,!?;:'"()\[\]{}…—–\-]+$/.test(trimmed);
+        if (isWord && isPunctuationOnly && globalWordIndex < displayWords.length) {
+          const currentSpan = wordsRef.current[globalWordIndex];
+          const expectedPunct = currentSpan?.getAttribute('data-expected-punct') || '';
+          const punctMatches = expectedPunct && (
+            trimmed.length === 1 ? expectedPunct.includes(trimmed) :
+            trimmed.split('').every((c: string) => expectedPunct.includes(c))
+          );
+          if (currentSpan && punctMatches) {
+            currentSpan.textContent = (currentSpan.textContent || '') + segment;
+            currentSpan.removeAttribute('data-expected-punct');
+            globalWordIndex++;
+            nodeWordIdx++;
+            // Don't append span again - it's already in the fragment from the previous segment
+            return;
+          }
+        }
+        
         if (isWord && nodeWordIdx < nodeWords.length && globalWordIndex < displayWords.length) {
           const cleanedSegment = cleanTextForAudio(segment);
           const expectedDisplayWord = displayWords[globalWordIndex];
@@ -472,6 +491,7 @@ export default function AudioPlayer({
   const wordsRef = useRef<HTMLSpanElement[]>([]);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const speedMenuRef = useRef<HTMLDivElement>(null);
+  const timestampsLoadAttemptedRef = useRef(false);
 
   // Check if text contains HTML
   const isHTML = useMemo(() => /<[^>]+>/.test(text), [text]);
@@ -656,8 +676,11 @@ export default function AudioPlayer({
     if (!timestampsUrl) {
       setWords([]);
       setTimestampText(null);
+      timestampsLoadAttemptedRef.current = true;
       return;
     }
+
+    timestampsLoadAttemptedRef.current = false;
 
     const loadTimestamps = async () => {
       try {
@@ -666,6 +689,7 @@ export default function AudioPlayer({
           console.warn('Failed to load timestamps:', response.statusText);
           setWords([]);
           setTimestampText(null);
+          timestampsLoadAttemptedRef.current = true;
           return;
         }
 
@@ -699,11 +723,31 @@ export default function AudioPlayer({
         console.error('Error loading timestamps:', error);
         setWords([]);
         setTimestampText(null);
+      } finally {
+        timestampsLoadAttemptedRef.current = true;
       }
     };
 
     loadTimestamps();
   }, [timestampsUrl]);
+
+  // Fallback: when section has audio but no timestamps (or empty timestamps), use approximate word-level highlighting
+  // so sections like Section 14 still get highlighting instead of none
+  useEffect(() => {
+    if (
+      timestampsLoadAttemptedRef.current &&
+      words.length === 0 &&
+      duration > 0 &&
+      displayWords.length > 0
+    ) {
+      const synthetic: WordTimestamp[] = displayWords.map((w, i) => ({
+        word: w,
+        startTime: (i * duration) / displayWords.length,
+        endTime: ((i + 1) * duration) / displayWords.length,
+      }));
+      setWords(synthetic);
+    }
+  }, [duration, displayWords, words.length]);
 
   useEffect(() => {
     const audio = audioRef.current;

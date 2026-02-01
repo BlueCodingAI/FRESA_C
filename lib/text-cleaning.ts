@@ -13,6 +13,11 @@ export function cleanTextForAudio(text: string): string {
 
   let cleaned = text
 
+  // Insert space at block tag boundaries so "word.</p><p>Word" becomes "word. Word"
+  // This prevents paragraph/empty-line breaks from concatenating words and breaking sync
+  cleaned = cleaned.replace(/\s*<\s*\/\s*(p|div|li|br|tr|h[1-6]|blockquote|section|article)\s*([^>]*)>\s*/gi, ' ')
+  cleaned = cleaned.replace(/\s*<\s*(p|div|li|br|tr|h[1-6]|blockquote|section|article)(\s[^>]*)?>\s*/gi, ' ')
+
   // Remove HTML tags (including style attributes and all HTML markup)
   cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
   cleaned = cleaned.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
