@@ -83,7 +83,14 @@ export async function GET(
       })),
     }
 
-    return NextResponse.json({ chapter: validatedChapter })
+    return NextResponse.json(
+      { chapter: validatedChapter },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      }
+    )
   } catch (error) {
     console.error('Error fetching chapter:', error)
     return NextResponse.json(

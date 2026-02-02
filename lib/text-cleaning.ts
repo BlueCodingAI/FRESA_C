@@ -13,11 +13,6 @@ export function cleanTextForAudio(text: string): string {
 
   let cleaned = text
 
-  // Insert space at block tag boundaries so "word.</p><p>Word" becomes "word. Word"
-  // This prevents paragraph/empty-line breaks from concatenating words and breaking sync
-  cleaned = cleaned.replace(/\s*<\s*\/\s*(p|div|li|br|tr|h[1-6]|blockquote|section|article)\s*([^>]*)>\s*/gi, ' ')
-  cleaned = cleaned.replace(/\s*<\s*(p|div|li|br|tr|h[1-6]|blockquote|section|article)(\s[^>]*)?>\s*/gi, ' ')
-
   // Remove HTML tags (including style attributes and all HTML markup)
   cleaned = cleaned.replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
   cleaned = cleaned.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
@@ -75,24 +70,67 @@ export function cleanTextForAudio(text: string): string {
 }
 
 /**
- * Split text into words using the exact same logic as audio generation
- * This ensures perfect alignment between display words and timestamp words
+ * Check if a token is punctuation/symbol-only (no letters or digits).
+ * Used to merge trailing punctuation into the previous word.
+ */
+const PUNCTUATION_ONLY_REGEX = /^[.,!?;:'"()\[\]{}…—–\-:;\s]+$/
+
+function isPunctuationOnly(token: string): boolean {
+  return token.length > 0 && PUNCTUATION_ONLY_REGEX.test(token) && !/[a-zA-Z0-9]/.test(token)
+}
+
+/**
+ * Split text into words for highlighting: one entry per logical word.
+ * Ignores formatting (bold, italic, color, etc.) and treats punctuation like normal text
+ * by merging punctuation-only tokens with the previous word (e.g. "Word , next" -> ["Word,", "next"]).
+ * This keeps display words in sync with timestamps regardless of spaces, commas, dots, (), {}, etc.
  */
 export function splitIntoWords(text: string): string[] {
   if (!text || typeof text !== 'string') {
     return []
   }
-  // Split by whitespace and filter out empty strings
-  // This matches exactly how words are processed for audio generation
-  return text.split(/\s+/).filter(word => word.length > 0)
+  const normalized = text.replace(/\s+/g, ' ').trim()
+  if (!normalized) return []
+  
+  const raw = normalized.split(/\s+/).filter(t => t.length > 0)
+  const result: string[] = []
+  
+  for (const token of raw) {
+    if (isPunctuationOnly(token)) {
+      // Merge with previous word so we never have standalone punctuation
+      if (result.length > 0) {
+        result[result.length - 1] += token
+      } else {
+        result.push(token)
+      }
+    } else {
+      result.push(token)
+    }
+  }
+  
+  return result
 }
 
 /**
- * Normalize word for matching (removes punctuation, lowercases)
- * Used for matching words between timestamp data and display text
+ * Normalize word for matching: strip punctuation/special chars, lowercase.
+ * Used for matching words between timestamp data and display text.
+ * Ignores formatting and special characters so "Word,", "(NAR)", "Word." all match by content.
  */
 export function normalizeWordForMatching(word: string): string {
-  return word.replace(/[.,!?;:'"()\[\]{}]/g, '').toLowerCase().trim()
+  return word.replace(/[.,!?;:'"()\[\]{}…—–\-:;]/g, '').toLowerCase().trim()
+}
+
+/**
+ * Content-only match: true if two strings are the same when we ignore
+ * punctuation, spaces, and special characters (only compare letters/numbers).
+ * Use when matching HTML segments to display words regardless of formatting.
+ */
+export function contentMatches(a: string, b: string): boolean {
+  const norm = (s: string) => s.replace(/[^a-zA-Z0-9']/g, '').toLowerCase().trim()
+  const na = norm(a)
+  const nb = norm(b)
+  if (na.length === 0 && nb.length === 0) return true
+  return na.length > 0 && na === nb
 }
 
 /**

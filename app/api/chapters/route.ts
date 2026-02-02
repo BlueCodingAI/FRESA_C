@@ -33,7 +33,14 @@ export async function GET(request: NextRequest) {
       orderBy: { number: 'asc' },
     })
 
-    return NextResponse.json({ chapters })
+    return NextResponse.json(
+      { chapters },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      }
+    )
   } catch (error) {
     console.error('Error fetching chapters:', error)
     return NextResponse.json(

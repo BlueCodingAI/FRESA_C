@@ -115,9 +115,19 @@ export default function ChapterPage() {
     };
     
     window.addEventListener('navigateToSection', handleNavigateToSection as EventListener);
-    
+
+    // Refetch when user returns to tab (e.g. after editing in admin) so section updates are shown
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        fetchChapterData();
+        fetchAllChapters();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
     return () => {
-      window.removeEventListener('navigateToSection', handleNavigateToSection as EventListener);
+      window.removeEventListener("navigateToSection", handleNavigateToSection as EventListener);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [chapterNumber, router]);
 
@@ -190,7 +200,7 @@ export default function ChapterPage() {
 
   const fetchAllChapters = async () => {
     try {
-      const response = await fetch("/api/chapters");
+      const response = await fetch("/api/chapters", { cache: "no-store" });
       if (response.ok) {
         const data = await response.json();
         setAllChapters(data.chapters || []);
@@ -204,7 +214,7 @@ export default function ChapterPage() {
     if (!chapterNumber) return;
     
     try {
-      const response = await fetch(`/api/chapters/${chapterNumber}`);
+      const response = await fetch(`/api/chapters/${chapterNumber}`, { cache: "no-store" });
       if (response.ok) {
         const data = await response.json();
         setChapterData(data.chapter);
