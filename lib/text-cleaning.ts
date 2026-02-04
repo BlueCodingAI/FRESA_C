@@ -70,6 +70,62 @@ export function cleanTextForAudio(text: string): string {
 }
 
 /**
+ * Strip HTML to plain text but preserve newlines (for splitting into segments).
+ * Used so we can detect numbered list lines like "1. Land Acquisition" as separate lines.
+ */
+function stripHtmlPreserveNewlines(text: string): string {
+  if (!text || typeof text !== 'string') return ''
+  let out = text
+  out = out.replace(/<br\s*\/?>/gi, '\n')
+  out = out.replace(/<\/p>/gi, '\n')
+  out = out.replace(/<\/div>/gi, '\n')
+  out = out.replace(/<[^>]+>/g, '')
+  out = out.replace(/\*\*([^*]+)\*\*/g, '$1')
+  out = out.replace(/\*([^*]+)\*/g, '$1')
+  out = out.replace(/&nbsp;/g, ' ')
+  out = out.replace(/&amp;/g, '&')
+  out = out.replace(/&lt;/g, '<')
+  out = out.replace(/&gt;/g, '>')
+  out = out.replace(/&quot;/g, '"')
+  out = out.replace(/&#39;/g, "'")
+  out = out.replace(/[ \t]+/g, ' ') // collapse spaces/tabs but keep newlines
+  return out
+}
+
+/** Match a standalone numbered list line: "1. Land Acquisition" or "2. Subdividing and Development" (no colon, short). */
+const NUMBERED_LIST_LINE = /^\s*\d+\.\s+[A-Za-z][^:]*$/
+
+/**
+ * Split content into segments for TTS so numbered list items (e.g. "1. Land Acquisition")
+ * are each spoken as a separate sentence instead of run-on.
+ * Returns array of cleaned text segments; concatenate their audio in order.
+ */
+export function getAudioSegmentsFromText(text: string): string[] {
+  if (!text || typeof text !== 'string') return []
+  const withNewlines = stripHtmlPreserveNewlines(text)
+  const lines = withNewlines.split(/\n/).map((line) => line.replace(/\s+/g, ' ').trim()).filter((l) => l.length > 0)
+  const segments: string[] = []
+  let current: string[] = []
+
+  for (const line of lines) {
+    const isStandaloneList = NUMBERED_LIST_LINE.test(line) && line.length < 120
+    if (isStandaloneList) {
+      if (current.length > 0) {
+        segments.push(cleanTextForAudio(current.join('\n')))
+        current = []
+      }
+      segments.push(cleanTextForAudio(line))
+    } else {
+      current.push(line)
+    }
+  }
+  if (current.length > 0) {
+    segments.push(cleanTextForAudio(current.join('\n')))
+  }
+  return segments.filter((s) => s.length > 0)
+}
+
+/**
  * Check if a token is punctuation/symbol-only (no letters or digits).
  * Used to merge trailing punctuation into the previous word.
  */

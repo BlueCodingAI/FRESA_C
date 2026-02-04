@@ -4,7 +4,7 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
 import { generateAudioWithInworld } from '@/lib/inworld-tts'
-import { cleanTextForAudio } from '@/lib/text-cleaning'
+import { cleanTextForAudio, getAudioSegmentsFromText } from '@/lib/text-cleaning'
 
 // Inworld AI API Configuration
 // Inworld uses Basic authentication with Base64 encoded credentials
@@ -56,13 +56,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Text is required' }, { status: 400 })
     }
 
-    // Clean text: remove all HTML, markdown, formatting codes, and color codes
-    // This ensures audio generation only processes plain text content
-    const cleanedText = cleanTextForAudio(text)
-    
+    // Split into segments so numbered list items (e.g. "1. Land Acquisition") are spoken as separate sentences
+    const segments = getAudioSegmentsFromText(text)
+    const cleanedText = segments.length > 0 ? segments.join(' ') : cleanTextForAudio(text)
     if (!cleanedText || cleanedText.trim().length === 0) {
-      return NextResponse.json({ 
-        error: 'Text is required. Please ensure your content contains readable text after removing formatting.' 
+      return NextResponse.json({
+        error: 'Text is required. Please ensure your content contains readable text after removing formatting.',
       }, { status: 400 })
     }
 
@@ -94,29 +93,63 @@ export async function POST(request: NextRequest) {
       applyTextNormalization: applyTextNormalization || 'APPLY_TEXT_NORMALIZATION_UNSPECIFIED',
     }
 
-    // Generate audio and timestamps using Inworld AI TTS API
-    // Inworld provides both audio and word-level timestamps in a single API call
+    // Generate audio and timestamps: one TTS call per segment so numbered list items are separate sentences
     console.log('🔄 Generating audio and timestamps using Inworld AI...')
     console.log('   Voice ID:', selectedVoiceId)
+    console.log('   Segments:', segments.length)
     console.log('   Options:', JSON.stringify(ttsOptions, null, 2))
-    
+
     let audioBytes: Buffer
     let timestampsData: any
-    
+
     try {
-      const result = await generateAudioWithInworld(
-        cleanedText,
-        selectedVoiceId,
-        INWORLD_API_KEY,
-        ttsOptions
-      )
-      
-      audioBytes = result.audioBuffer
-      timestampsData = result.timestampData
-      
+      if (segments.length <= 1) {
+        const result = await generateAudioWithInworld(
+          cleanedText,
+          selectedVoiceId,
+          INWORLD_API_KEY,
+          ttsOptions
+        )
+        audioBytes = result.audioBuffer
+        timestampsData = result.timestampData
+      } else {
+        const buffers: Buffer[] = []
+        const allWords: Array<{ text: string; start: number; end: number; confidence: number }> = []
+        let timeOffset = 0
+        const textParts: string[] = []
+
+        for (const segment of segments) {
+          const result = await generateAudioWithInworld(
+            segment,
+            selectedVoiceId,
+            INWORLD_API_KEY,
+            ttsOptions
+          )
+          buffers.push(result.audioBuffer)
+          const words = result.timestampData?.segments?.[0]?.words ?? []
+          for (const w of words) {
+            allWords.push({
+              text: w.text ?? '',
+              start: (w.start ?? 0) + timeOffset,
+              end: (w.end ?? 0) + timeOffset,
+              confidence: w.confidence ?? 1.0,
+            })
+          }
+          const segDuration = words.length > 0 ? Math.max(...words.map((w: any) => w.end ?? 0)) : 0
+          timeOffset += segDuration
+          textParts.push(segment)
+        }
+
+        audioBytes = Buffer.concat(buffers)
+        timestampsData = {
+          text: textParts.join(' '),
+          segments: [{ words: allWords }],
+        }
+      }
+
       console.log('✅ Inworld AI audio and timestamps generated successfully:', {
         audioSize: audioBytes.length,
-        wordCount: timestampsData.segments[0]?.words?.length || 0,
+        wordCount: timestampsData?.segments?.[0]?.words?.length ?? 0,
       })
     } catch (inworldError: any) {
       console.error('❌ Inworld AI API error:', inworldError.message)
