@@ -909,7 +909,7 @@ export default function ChapterPage() {
           </div>
         </div>
 
-        <div className="flex-1 flex items-start justify-center py-6 px-4 overflow-x-hidden">
+        <div className="flex items-start justify-center py-6 px-4 overflow-x-hidden">
           <div className="w-full max-w-5xl">
             <div className="bg-[#1e3a5f] border border-blue-500/30 rounded-2xl shadow-2xl animate-scale-in overflow-hidden flex flex-col">
               {/* Header - Fixed */}

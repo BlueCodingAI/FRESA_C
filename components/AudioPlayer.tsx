@@ -507,10 +507,12 @@ export default function AudioPlayer({
 
   const isHTML = useMemo(() => /<[^>]+>/.test(text), [text]);
   const plainText = useMemo(() => cleanTextForAudio(text), [text]);
-  // Structured plain text preserves paragraphs/line breaks so frontend matches admin edit form
+  // Structured plain text preserves paragraphs/line breaks; trim/collapse to avoid huge empty space at end
   const structuredDisplayText = useMemo(() => {
     if (typeof document === 'undefined' || !isHTML || !text) return plainText;
-    return getFormatRangesFromHtml(text).plainText;
+    let raw = getFormatRangesFromHtml(text).plainText;
+    raw = raw.replace(/\n{3,}/g, '\n\n'); // at most one blank line between paragraphs
+    return raw.replace(/\n+$/, '').trimEnd(); // trim trailing newlines so no huge empty space
   }, [text, isHTML, plainText]);
   const [timestampText, setTimestampText] = useState<string | null>(null);
 
