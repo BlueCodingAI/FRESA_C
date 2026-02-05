@@ -68,10 +68,50 @@ function wordContent(s: string): string {
 /** Format range from HTML (matches admin Rich Text Editor: bold, italic, underline, color). */
 type FormatRange = { start: number; end: number; bold?: boolean; italic?: boolean; underline?: boolean; color?: string };
 
-/** Only <br> and <p> add line breaks; avoid extra breaks from nested <div> etc. */
-const PARAGRAPH_TAG = 'p';
+/** Block tags that can add a line break when they are direct children of root (so admin spacing matches). */
+const BLOCK_TAGS_FOR_BREAK = new Set(['p', 'div']);
 
-/** Extract plain text and format ranges from HTML, preserving structure to match admin edit form (no extra <br>). */
+/** Map common Tailwind/editor color class names to hex (fallback when color is not inline). */
+const CLASS_COLOR_MAP: Record<string, string> = {
+  'text-blue-500': '#3b82f6', 'text-blue-600': '#2563eb', 'text-cyan-500': '#06b6d4', 'text-green-500': '#10b981',
+  'text-yellow-500': '#eab308', 'text-orange-500': '#f97316', 'text-red-500': '#ef4444', 'text-purple-500': '#a855f7',
+  'text-pink-500': '#ec4899', 'text-white': '#ffffff', 'text-gray-400': '#9ca3af', 'text-black': '#000000',
+};
+
+function parseColorFromElement(el: Element): string | undefined {
+  const style = (el.getAttribute('style') || (el as HTMLElement).style?.cssText || '');
+  if (style) {
+    const m = style.match(/color\s*:\s*([^;!]+)/i);
+    if (m) return m[1].trim();
+  }
+  const dataColor = el.getAttribute('data-color')?.trim();
+  if (dataColor) return dataColor;
+  const fontColor = el.getAttribute('color')?.trim();
+  if (fontColor) return fontColor;
+  const cls = el.getAttribute('class');
+  if (cls) {
+    for (const key of Object.keys(CLASS_COLOR_MAP)) {
+      if (cls.split(/\s+/).includes(key)) return CLASS_COLOR_MAP[key];
+    }
+  }
+  if (typeof window !== 'undefined' && el instanceof HTMLElement) {
+    try {
+      const computed = window.getComputedStyle(el).color;
+      if (computed && computed !== 'rgba(0, 0, 0, 0)' && computed !== 'transparent') return computed;
+    } catch (_) {}
+  }
+  return undefined;
+}
+
+function normalizeColor(color: string): string {
+  const t = color.trim();
+  if (!t) return t;
+  if (t.startsWith('#') || t.startsWith('rgb')) return t;
+  if (/^[a-fA-F0-9]{6}$/.test(t)) return '#' + t;
+  return t;
+}
+
+/** Extract plain text and format ranges from HTML, preserving structure to match admin edit form. */
 function getFormatRangesFromHtml(html: string): { plainText: string; ranges: FormatRange[] } {
   const doc = typeof document === 'undefined' ? null : document.createElement('div');
   if (!doc) return { plainText: '', ranges: [] };
@@ -79,7 +119,7 @@ function getFormatRangesFromHtml(html: string): { plainText: string; ranges: For
   let plainText = '';
   const ranges: FormatRange[] = [];
 
-  const walk = (node: Node) => {
+  const walk = (node: Node, isRootChild: boolean = true) => {
     if (node.nodeType === Node.TEXT_NODE) {
       const text = (node.textContent || '');
       const start = plainText.length;
@@ -96,16 +136,8 @@ function getFormatRangesFromHtml(html: string): { plainText: string; ranges: For
           if (tag === 'b' || tag === 'strong') bold = true;
           if (tag === 'i' || tag === 'em') italic = true;
           if (tag === 'u') underline = true;
-          if (!color) {
-            const style = (el as Element).getAttribute('style') || (el as HTMLElement).style?.cssText || '';
-            if (style) {
-              const m = style.match(/color\s*:\s*([^;!]+)/i);
-              if (m) color = m[1].trim();
-            }
-          }
-          if (!color && (el as Element).getAttribute('data-color')) color = (el as Element).getAttribute('data-color') || undefined;
-          if (!color && (el as Element).getAttribute('color')) color = (el as Element).getAttribute('color') || undefined;
-          if (color && !color.startsWith('#') && !color.startsWith('rgb') && /^[a-fA-F0-9]{6}$/.test(color)) color = '#' + color;
+          if (!color) color = parseColorFromElement(el as Element);
+          if (color) color = normalizeColor(color);
           el = el.parentElement;
         }
         if (bold || italic || underline || color)
@@ -119,14 +151,24 @@ function getFormatRangesFromHtml(html: string): { plainText: string; ranges: For
         plainText += '\n';
         return;
       }
-      // Only <p> adds a paragraph break; skip newline for <div>, headings, etc. to avoid extra <br> on frontend
-      if (tag === PARAGRAPH_TAG && plainText.length > 0) {
+      if (isRootChild && BLOCK_TAGS_FOR_BREAK.has(tag) && plainText.length > 0) {
         plainText += '\n';
       }
-      node.childNodes.forEach(walk);
+      node.childNodes.forEach((child) => walk(child, false));
     }
   };
-  doc.childNodes.forEach(walk);
+
+  if (typeof document !== 'undefined' && document.body) {
+    doc.style.position = 'absolute';
+    doc.style.left = '-9999px';
+    doc.style.visibility = 'hidden';
+    document.body.appendChild(doc);
+  }
+  try {
+    doc.childNodes.forEach((child) => walk(child, true));
+  } finally {
+    if (doc.parentNode) doc.parentNode.removeChild(doc);
+  }
   return { plainText, ranges };
 }
 
@@ -178,28 +220,97 @@ function getWordBoundariesInText(fullText: string, displayWords: string[]): { st
   return boundaries;
 }
 
-/** Find which format applies to a span [start, end) from format ranges (from HTML). */
+/** Find which format applies to a span [start, end) from format ranges (from HTML).
+ * Merges all overlapping ranges so we get bold from outer + color from inner (e.g. "1." in <font color>). */
 function getFormatForRange(start: number, end: number, ranges: FormatRange[]): Omit<FormatRange, 'start' | 'end'> {
-  for (const r of ranges) {
-    if (r.start < end && r.end > start) {
-      return {
-        ...(r.bold && { bold: true }),
-        ...(r.italic && { italic: true }),
-        ...(r.underline && { underline: true }),
-        ...(r.color && { color: r.color }),
-      };
+  const overlapping = ranges.filter((r) => r.start < end && r.end > start);
+  if (overlapping.length === 0) return {};
+  let bold = false;
+  let italic = false;
+  let underline = false;
+  let color: string | undefined;
+  // For color, use the innermost range that has color (so "1." font color wins over wrapper)
+  const byLength = overlapping.slice().sort((a, b) => (a.end - a.start) - (b.end - b.start));
+  for (const r of overlapping) {
+    if (r.bold) bold = true;
+    if (r.italic) italic = true;
+    if (r.underline) underline = true;
+  }
+  for (const r of byLength) {
+    if (r.color) {
+      color = r.color;
+      break;
     }
   }
-  return {};
+  return {
+    ...(bold && { bold: true }),
+    ...(italic && { italic: true }),
+    ...(underline && { underline: true }),
+    ...(color && { color }),
+  };
 }
 
-/** Append text to fragment, rendering newlines as <br> so structure matches admin edit form. */
+/** Append text to fragment, rendering newlines as <br>; cap consecutive <br> at 2 to avoid huge gaps. */
 function appendTextWithBreaks(fragment: DocumentFragment, str: string) {
   const parts = str.split(/\n/);
-  parts.forEach((part, i) => {
-    fragment.appendChild(document.createTextNode(part));
-    if (i < parts.length - 1) fragment.appendChild(document.createElement('br'));
-  });
+  let i = 0;
+  while (i < parts.length) {
+    fragment.appendChild(document.createTextNode(parts[i] ?? ''));
+    if (i >= parts.length - 1) break;
+    let j = i + 1;
+    while (j < parts.length && parts[j] === '') j++;
+    const numBr = Math.min(j - i, 2);
+    for (let k = 0; k < numBr; k++) fragment.appendChild(document.createElement('br'));
+    i = j;
+  }
+}
+
+/** Append a segment of displayText (with newlines) to fragment WITH formatting from formatRanges. Used so "1.", "2.", "3." in gaps between word spans get color. */
+function appendFormattedSegment(
+  fragment: DocumentFragment,
+  displayText: string,
+  segStart: number,
+  segEnd: number,
+  formatRanges: FormatRange[]
+) {
+  if (segStart >= segEnd) return;
+  const segment = displayText.slice(segStart, segEnd);
+  const lines = segment.split('\n');
+  let offset = segStart;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i] ?? '';
+    let pos = 0;
+    while (pos < line.length) {
+      // If char is a digit and next is ".", include period in format lookup so digit gets same color as "1."
+      const formatEnd = /^\d$/.test(line[pos] ?? '') && pos + 1 < line.length && line[pos + 1] === '.' ? offset + pos + 2 : offset + pos + 1;
+      const runFmt = getFormatForRange(offset + pos, formatEnd, formatRanges);
+      let runEnd = pos + 1;
+      while (runEnd < line.length) {
+        const nextFmt = getFormatForRange(offset + runEnd, offset + runEnd + 1, formatRanges);
+        if (runFmt.bold === nextFmt.bold && runFmt.italic === nextFmt.italic && runFmt.underline === nextFmt.underline && runFmt.color === nextFmt.color)
+          runEnd++;
+        else break;
+      }
+      const runText = line.slice(pos, runEnd);
+      const span = document.createElement('span');
+      span.className = 'inline';
+      if (runFmt.bold) span.style.fontWeight = '700';
+      if (runFmt.italic) span.style.fontStyle = 'italic';
+      if (runFmt.underline) span.style.textDecoration = 'underline';
+      if (runFmt.color) span.style.color = runFmt.color;
+      span.textContent = runText;
+      fragment.appendChild(span);
+      pos = runEnd;
+    }
+    offset += line.length + 1;
+    if (i < lines.length - 1) {
+      let j = i + 1;
+      while (j < lines.length && (lines[j] ?? '') === '') j++;
+      const numBr = Math.min(j - i, 2);
+      for (let k = 0; k < numBr; k++) fragment.appendChild(document.createElement('br'));
+      i = j - 1;
+    }
+  }
 }
 
 /**
@@ -225,12 +336,13 @@ function TimestampTextWithHighlighting({
     [displayText, displayWords]
   );
 
-  const formatRanges = useMemo((): FormatRange[] => {
-    if (!html || typeof document === 'undefined') return [];
+  const { formatRanges, plainTextFromHtml } = useMemo((): { formatRanges: FormatRange[]; plainTextFromHtml: string } => {
+    if (!html || typeof document === 'undefined') return { formatRanges: [], plainTextFromHtml: '' };
     const { plainText, ranges } = getFormatRangesFromHtml(html);
     const norm = (s: string) => s.replace(/\s+/g, ' ').trim();
-    if (norm(plainText) !== norm(displayText)) return [];
-    return ranges;
+    const trimmedPlain = plainText.replace(/\n+$/, '').trimEnd();
+    if (norm(plainText) !== norm(displayText) && norm(trimmedPlain) !== norm(displayText)) return { formatRanges: [], plainTextFromHtml: '' };
+    return { formatRanges: ranges, plainTextFromHtml: trimmedPlain };
   }, [html, displayText]);
 
   useEffect(() => {
@@ -241,13 +353,32 @@ function TimestampTextWithHighlighting({
     wordsRef.current = new Array(displayWords.length).fill(null);
     boundaries.forEach((b, i) => {
       if (prevEnd < b.start) {
-        appendTextWithBreaks(fragment, displayText.slice(prevEnd, b.start));
+        appendFormattedSegment(fragment, displayText, prevEnd, b.start, formatRanges);
       }
       const span = document.createElement('span');
       span.className = 'inline audio-word';
       span.setAttribute('data-word-index', String(i));
-      span.textContent = displayText.slice(b.start, b.end);
-      const fmt = getFormatForRange(b.start, b.end, formatRanges);
+      const wordText = displayText.slice(b.start, b.end);
+      span.textContent = wordText;
+      // If this word is just a digit and the next char is ".", include the period in the format lookup so we get the same color (admin often colors "1." as a unit but HTML/timestamp can split them)
+      const formatEnd = /^\d$/.test(wordText.trim()) && b.end < displayText.length && displayText[b.end] === '.' ? b.end + 1 : b.end;
+      let fmt = getFormatForRange(b.start, formatEnd, formatRanges);
+      // Fallback: list numbers "1.", "2.", "3." can miss format when displayText and HTML plainText positions differ — find by content
+      if (!fmt.color && /^\d+\.$/.test(wordText.trim()) && plainTextFromHtml) {
+        const trimmed = wordText.trim();
+        let searchPos = 0;
+        let foundIdx = -1;
+        for (;;) {
+          const pos = plainTextFromHtml.indexOf(trimmed, searchPos);
+          if (pos === -1) break;
+          if (foundIdx < 0 || Math.abs(pos - b.start) < Math.abs(foundIdx - b.start)) foundIdx = pos;
+          searchPos = pos + 1;
+        }
+        if (foundIdx >= 0) {
+          const withColor = formatRanges.find((r) => r.color && r.start <= foundIdx && r.end > foundIdx);
+          if (withColor?.color) fmt = { ...fmt, color: withColor.color };
+        }
+      }
       if (fmt.bold) span.style.fontWeight = '700';
       if (fmt.italic) span.style.fontStyle = 'italic';
       if (fmt.underline) span.style.textDecoration = 'underline';
@@ -260,11 +391,11 @@ function TimestampTextWithHighlighting({
       prevEnd = b.end;
     });
     if (prevEnd < displayText.length) {
-      appendTextWithBreaks(fragment, displayText.slice(prevEnd));
+      appendFormattedSegment(fragment, displayText, prevEnd, displayText.length, formatRanges);
     }
     container.innerHTML = '';
     container.appendChild(fragment);
-  }, [displayText, displayWords, boundaries, formatRanges]);
+  }, [displayText, displayWords, boundaries, formatRanges, plainTextFromHtml]);
 
   useEffect(() => {
     if (!containerRef.current || typeof document === 'undefined') return;
@@ -507,12 +638,11 @@ export default function AudioPlayer({
 
   const isHTML = useMemo(() => /<[^>]+>/.test(text), [text]);
   const plainText = useMemo(() => cleanTextForAudio(text), [text]);
-  // Structured plain text preserves paragraphs/line breaks; trim/collapse to avoid huge empty space at end
+  // Structured plain text matches admin: same line/paragraph breaks; only trim trailing newlines
   const structuredDisplayText = useMemo(() => {
     if (typeof document === 'undefined' || !isHTML || !text) return plainText;
-    let raw = getFormatRangesFromHtml(text).plainText;
-    raw = raw.replace(/\n{3,}/g, '\n\n'); // at most one blank line between paragraphs
-    return raw.replace(/\n+$/, '').trimEnd(); // trim trailing newlines so no huge empty space
+    const raw = getFormatRangesFromHtml(text).plainText;
+    return raw.replace(/\n+$/, '').trimEnd();
   }, [text, isHTML, plainText]);
   const [timestampText, setTimestampText] = useState<string | null>(null);
 
