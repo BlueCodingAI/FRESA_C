@@ -198,6 +198,24 @@ export default function ChapterPage() {
     checkChapterAccess();
   }, [chapterNumber, allUserProgress, router]);
 
+  // When sections are loaded and currentSection is still empty (no sessionStorage restore), set from progress or first section
+  useEffect(() => {
+    if (!chapterNumber || sections.length === 0 || currentSection !== "") return;
+    const fromProgress =
+      userProgress?.sectionId && sections.some((s) => s.id === userProgress.sectionId)
+        ? userProgress.sectionId
+        : null;
+    setCurrentSection(fromProgress ?? sections[0].id);
+  }, [chapterNumber, sections, userProgress, currentSection]);
+
+  // Persist current section so iOS/Safari reload or app switch doesn't lose position
+  useEffect(() => {
+    if (!chapterNumber || !currentSection || !sections.some((s) => s.id === currentSection)) return;
+    try {
+      sessionStorage.setItem(`chapterSection-${chapterNumber}`, currentSection);
+    } catch (_) {}
+  }, [chapterNumber, currentSection, sections]);
+
   const fetchAllChapters = async () => {
     try {
       const response = await fetch("/api/chapters", { cache: "no-store" });
@@ -244,15 +262,14 @@ export default function ChapterPage() {
         
         setSections(dbSections);
         
-        // Load progress after sections are loaded
+        // Restore section from sessionStorage (so iOS/Safari reload or app switch doesn't jump back to section 1)
         if (dbSections.length > 0) {
-          // Wait a bit for progress to load, then set section
-          setTimeout(() => {
-            if (!currentSection) {
-              // If no progress saved, start from first section
-              setCurrentSection(dbSections[0].id);
+          try {
+            const savedSection = sessionStorage.getItem(`chapterSection-${chapterNumber}`);
+            if (savedSection && dbSections.some((s) => s.id === savedSection)) {
+              setCurrentSection(savedSection);
             }
-          }, 100);
+          } catch (_) {}
         }
         
         const targetSection = sessionStorage.getItem('targetSection');
