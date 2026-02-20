@@ -89,12 +89,7 @@ export default function ChapterPage() {
       
       if (sectionId) {
         if (sectionId === 'quiz') {
-          // Check if current chapter quiz is completed before showing quiz
-          if (userProgress && userProgress.quizCompleted && userProgress.quizScore >= (userProgress.quizTotal * 0.8)) {
-            setShowQuiz(true);
-          } else {
-            alert("You must complete all sections of this chapter first, and pass the quiz with at least 80% to proceed.");
-          }
+          setShowQuiz(true);
         } else {
           // Check if we can navigate to this section
           if (targetChapterNumber && targetChapterNumber !== chapterNumber) {
@@ -262,35 +257,32 @@ export default function ChapterPage() {
         
         setSections(dbSections);
         
-        // Restore section from sessionStorage (so iOS/Safari reload or app switch doesn't jump back to section 1)
-        if (dbSections.length > 0) {
-          try {
-            const savedSection = sessionStorage.getItem(`chapterSection-${chapterNumber}`);
-            if (savedSection && dbSections.some((s) => s.id === savedSection)) {
-              setCurrentSection(savedSection);
-            }
-          } catch (_) {}
-        }
-        
+        // Process explicit navigation from menu first (so "last section" or "quiz" opens on first try)
         const targetSection = sessionStorage.getItem('targetSection');
-        if (targetSection) {
+        if (targetSection && dbSections.length > 0) {
           if (targetSection === 'quiz') {
             setShowQuiz(true);
             sessionStorage.removeItem('targetSection');
             setActivePlayingSectionId(null);
           } else {
-            const sectionExists = dbSections.some(s => s.id === targetSection);
+            const sectionExists = dbSections.some((s) => s.id === targetSection);
             if (sectionExists) {
               setCurrentSection(targetSection);
               sessionStorage.removeItem('targetSection');
               setActivePlayingSectionId(null);
             } else {
               sessionStorage.removeItem('targetSection');
-              if (dbSections.length > 0) {
-                setCurrentSection(dbSections[0].id);
-              }
             }
           }
+        }
+        // If we didn't set section from targetSection, restore from sessionStorage (iOS/app switch)
+        if (!targetSection && dbSections.length > 0) {
+          try {
+            const savedSection = sessionStorage.getItem(`chapterSection-${chapterNumber}`);
+            if (savedSection && dbSections.some((s) => s.id === savedSection)) {
+              setCurrentSection(savedSection);
+            }
+          } catch (_) {}
         }
         
         // Don't load quiz questions here - will load when quiz is shown with proper count
@@ -471,7 +463,7 @@ export default function ChapterPage() {
       { id: "intro", title: "Introduction", path: "/introduction" },
     ];
     
-    // Add all chapters with their sections
+    // Add all chapters with their sections + Chapter N Quiz as last item
     allChapters.forEach((chapter) => {
       const chapterSections = chapter.sections 
         ? chapter.sections.map((section: any, index: number) => ({
@@ -482,7 +474,13 @@ export default function ChapterPage() {
           }))
         : [];
       
-      // If this is the current chapter, use the loaded sections (which might be more up-to-date)
+      const quizChild = {
+        id: `chapter-${chapter.id}-quiz`,
+        title: `Chapter ${chapter.number} Quiz`,
+        path: `/chapter/${chapter.number}`,
+        sectionId: 'quiz',
+      };
+      
       if (chapterData && chapter.id === chapterData.id && sections.length > 0) {
         const currentChapterSections = sections.map((section, index) => ({
           id: `section-${section.id}`,
@@ -495,7 +493,7 @@ export default function ChapterPage() {
           title: `Chapter ${chapter.number}. ${chapter.title}`,
           path: `/chapter/${chapter.number}`,
           isChapter: true,
-          children: currentChapterSections,
+          children: [...currentChapterSections, quizChild],
         });
       } else {
         items.push({
@@ -503,9 +501,24 @@ export default function ChapterPage() {
           title: `Chapter ${chapter.number}. ${chapter.title}`,
           path: `/chapter/${chapter.number}`,
           isChapter: true,
-          children: chapterSections,
+          children: [...chapterSections, quizChild],
         });
       }
+    });
+    
+    // Quizzes: direct access to each chapter quiz
+    const quizChildren = allChapters.map((chapter) => ({
+      id: `quiz-direct-${chapter.id}`,
+      title: `Chapter ${chapter.number} Quiz`,
+      path: `/chapter/${chapter.number}`,
+      sectionId: 'quiz' as const,
+    }));
+    items.push({
+      id: 'quizzes',
+      title: 'Quizzes',
+      path: '/chapter/1',
+      isChapter: true,
+      children: quizChildren,
     });
     
     return items;

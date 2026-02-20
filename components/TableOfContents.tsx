@@ -105,21 +105,15 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
         return;
       }
       
-      // Store section ID in sessionStorage to be picked up by the chapter page
+      // Store section ID (or 'quiz') in sessionStorage so the chapter page applies it on load
       sessionStorage.setItem('targetSection', item.sectionId);
       
-      // If we're already on the chapter page, just dispatch the event
-      // Otherwise, navigate first
       if (pathname === item.path || currentPath === item.path) {
-        // Already on the page - just trigger section change
-        window.dispatchEvent(new CustomEvent('navigateToSection', { detail: { sectionId: item.sectionId } }));
+        // Already on this chapter page - trigger section change immediately
+        window.dispatchEvent(new CustomEvent('navigateToSection', { detail: { sectionId: item.sectionId, chapterNumber: targetChapterNumber } }));
       } else {
-        // Navigate to the chapter page first
+        // Different chapter: navigate only; the new page will read targetSection when its fetch completes
         router.push(item.path);
-        // Small delay to ensure navigation happens, then trigger section change
-        setTimeout(() => {
-          window.dispatchEvent(new CustomEvent('navigateToSection', { detail: { sectionId: item.sectionId } }));
-        }, 100);
       }
       
       setIsOpen(false);
