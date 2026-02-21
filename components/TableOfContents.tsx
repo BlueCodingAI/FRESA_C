@@ -130,20 +130,18 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
 
   return (
     <>
-      {/* Mobile Menu Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-20 left-4 z-50 bg-[#1e3a5f] border border-blue-500/30 rounded-lg p-2 shadow-lg hover:bg-[#2d4a6f] transition-all duration-200 md:hidden"
-        aria-label="Toggle menu"
-      >
-        <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          {isOpen ? (
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          ) : (
+      {/* Mobile Menu Button - hidden when sidebar is open; close is inside the sidebar */}
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="fixed top-20 left-4 z-[45] bg-[#1e3a5f] border border-blue-500/30 rounded-lg p-2 shadow-lg hover:bg-[#2d4a6f] transition-all duration-200 md:hidden"
+          aria-label="Open menu"
+        >
+          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          )}
-        </svg>
-      </button>
+          </svg>
+        </button>
+      )}
 
       {/* Desktop Sidebar */}
       <aside className="hidden md:block fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-[#0a1a2e]/95 backdrop-blur-md border-r border-blue-500/30 z-40 overflow-y-auto shadow-xl">
@@ -255,20 +253,21 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
         </div>
       </aside>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Menu Overlay - z-index below main menu (Header) so main menu stays dominant */}
       {isOpen && (
         <>
           <div
             className="fixed inset-0 bg-black/50 z-40 md:hidden"
             onClick={() => setIsOpen(false)}
           />
-          <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-[#0a1a2e] border-r border-blue-500/30 z-50 overflow-y-auto md:hidden animate-slide-up">
+          <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-[#0a1a2e] border-r border-blue-500/30 z-40 overflow-y-auto md:hidden animate-slide-up">
             <div className="p-4">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-bold text-white">Course Navigation</h2>
                 <button
                   onClick={() => setIsOpen(false)}
                   className="text-gray-300 hover:text-white"
+                  aria-label="Close menu"
                 >
                   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

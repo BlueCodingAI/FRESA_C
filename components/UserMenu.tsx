@@ -156,10 +156,10 @@ export default function UserMenu() {
       {showMenu && (
         <>
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-[65] md:z-40"
             onClick={() => setShowMenu(false)}
           />
-          <div className="absolute right-0 mt-2 w-56 bg-[#1a1f3a] border border-cyan-500/30 rounded-lg shadow-xl z-50 overflow-hidden">
+          <div className="absolute right-0 mt-2 w-56 bg-[#1a1f3a] border border-cyan-500/30 rounded-lg shadow-xl z-[70] md:z-50 overflow-hidden">
             <div className="p-4 border-b border-cyan-500/20">
               <div className="flex items-center gap-3">
                 <div className={`w-10 h-10 rounded-full bg-gradient-to-r ${getRoleColor(user.role)} flex items-center justify-center text-white text-sm font-bold flex-shrink-0`}>

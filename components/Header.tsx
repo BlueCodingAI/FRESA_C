@@ -112,14 +112,14 @@ export default function Header() {
         </div>
       </header>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Main Menu - higher z-index than Course Navigation so it is always dominant on mobile */}
       {isMobileMenuOpen && (
         <>
           <div
-            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 md:hidden"
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[55] md:hidden"
             onClick={() => setIsMobileMenuOpen(false)}
           />
-          <div className="fixed top-16 right-0 bottom-0 w-64 bg-[#0a1a2e] border-l border-cyan-500/30 z-50 shadow-xl md:hidden overflow-y-auto">
+          <div className="fixed top-16 right-0 bottom-0 w-64 bg-[#0a1a2e] border-l border-cyan-500/30 z-[60] shadow-xl md:hidden overflow-y-auto">
             <div className="p-4 space-y-3">
               {/* Contact Button */}
               <Link
