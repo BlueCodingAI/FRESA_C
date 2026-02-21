@@ -506,21 +506,6 @@ export default function ChapterPage() {
       }
     });
     
-    // Quizzes: direct access to each chapter quiz
-    const quizChildren = allChapters.map((chapter) => ({
-      id: `quiz-direct-${chapter.id}`,
-      title: `Chapter ${chapter.number} Quiz`,
-      path: `/chapter/${chapter.number}`,
-      sectionId: 'quiz' as const,
-    }));
-    items.push({
-      id: 'quizzes',
-      title: 'Quizzes',
-      path: '/chapter/1',
-      isChapter: true,
-      children: quizChildren,
-    });
-    
     return items;
   }, [allChapters, sections, chapterData]);
 

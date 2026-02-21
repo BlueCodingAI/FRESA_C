@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     // Only send email for End-of-Course Exam if passed (75%+)
     const percentage = total > 0 ? Math.round((score / total) * 100) : 0
-    const passed = percentage >= 75 // End-of-Course Exam passing score is 75%
+    const passed = percentage >= 70 // End-of-Course Exam passing score is 70%
     
     if (examType === 'end-of-course' && passed) {
       const notifyTo = process.env.ADMIN_NOTIFY_EMAIL

@@ -98,6 +98,22 @@ export default function MrListings({
           }}
         />
 
+        {/* Diamond on chest - light blue fill, darker blue border (more interesting look) */}
+        <div
+          className="absolute z-20"
+          style={{
+            left: '50%',
+            top: `${baseSize * 0.5}px`,
+            transform: 'translateX(-50%) rotate(45deg)',
+            width: `${baseSize * 0.16}px`,
+            height: `${baseSize * 0.16}px`,
+            backgroundColor: 'rgba(147, 197, 253, 0.95)',
+            border: `2.5px solid rgb(59, 130, 246)`,
+            borderRadius: '3px',
+            boxShadow: '0 0 0 1px rgba(59, 130, 246, 0.3)',
+          }}
+        />
+
         {/* Head - Smaller circle on top */}
         <div 
           className="absolute bg-gradient-to-b from-blue-300 via-blue-400 to-blue-500 rounded-full shadow-lg z-20 transition-all duration-300"
@@ -136,22 +152,14 @@ export default function MrListings({
                   }}
                 />
               ) : isHappy ? (
-                // Happy eyes - upward curved (smiling eyes)
-                <svg 
-                  width={baseSize * 0.09} 
-                  height={baseSize * 0.09} 
-                  viewBox="0 0 24 24" 
-                  fill="none"
-                  className="transition-all duration-300"
-                >
-                  <path 
-                    d="M8 10C8 10 10 6 12 6C14 6 16 10 16 10" 
-                    stroke="black" 
-                    strokeWidth="2.5" 
-                    strokeLinecap="round"
-                    fill="none"
-                  />
-                </svg>
+                // Happy eyes - regular round pupils (friendly, not cross-eyed)
+                <div 
+                  className="bg-black rounded-full transition-all duration-300"
+                  style={{
+                    width: `${baseSize * 0.06}px`,
+                    height: `${baseSize * 0.06}px`,
+                  }}
+                />
               ) : isSad ? (
                 // Sad eyes - downward curved
                 <svg 
@@ -198,21 +206,13 @@ export default function MrListings({
                   }}
                 />
               ) : isHappy ? (
-                <svg 
-                  width={baseSize * 0.09} 
-                  height={baseSize * 0.09} 
-                  viewBox="0 0 24 24" 
-                  fill="none"
-                  className="transition-all duration-300"
-                >
-                  <path 
-                    d="M8 10C8 10 10 6 12 6C14 6 16 10 16 10" 
-                    stroke="black" 
-                    strokeWidth="2.5" 
-                    strokeLinecap="round"
-                    fill="none"
-                  />
-                </svg>
+                <div 
+                  className="bg-black rounded-full transition-all duration-300"
+                  style={{
+                    width: `${baseSize * 0.06}px`,
+                    height: `${baseSize * 0.06}px`,
+                  }}
+                />
               ) : isSad ? (
                 <svg 
                   width={baseSize * 0.09} 

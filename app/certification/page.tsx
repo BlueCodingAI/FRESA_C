@@ -30,12 +30,15 @@ export default function CertificationPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [paymentStatus, setPaymentStatus] = useState<CertificatePayment | null>(null);
-  const [processingPayment, setProcessingPayment] = useState(false);
   const [downloading, setDownloading] = useState(false);
+  const [paymentStatusFetched, setPaymentStatusFetched] = useState(false);
 
   useEffect(() => {
     fetchUserData();
-    checkPaymentStatus();
+    (async () => {
+      await checkPaymentStatus();
+      setPaymentStatusFetched(true);
+    })();
 
     // Check for payment success in URL params
     if (typeof window !== "undefined") {
@@ -111,6 +114,16 @@ export default function CertificationPage() {
     }
   }, []);
 
+  // Only paid users can stay on /certification; unpaid users are redirected to payment page
+  useEffect(() => {
+    if (typeof window === "undefined" || loading || !paymentStatusFetched) return;
+    const hasPaid = paymentStatus?.status === "completed";
+    if (hasPaid) return;
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("payment") === "success" && urlParams.get("session_id")) return;
+    router.replace("/certification/pay");
+  }, [loading, paymentStatusFetched, paymentStatus?.status, router]);
+
   const getToken = () => {
     if (typeof document === "undefined") return null;
     return document.cookie
@@ -160,47 +173,10 @@ export default function CertificationPage() {
 
       if (response.ok) {
         const data = await response.json();
-        setPaymentStatus(data.payment);
+        setPaymentStatus(data.payment ?? null);
       }
     } catch (err) {
       console.error("Error checking payment status:", err);
-    }
-  };
-
-  const handlePayment = async () => {
-    try {
-      setProcessingPayment(true);
-      const token = getToken();
-      if (!token) {
-        router.push("/login");
-        return;
-      }
-
-      const response = await fetch("/api/certification/create-payment", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const { url } = await response.json();
-        if (url) {
-          // Redirect directly to Stripe Checkout URL
-          window.location.href = url;
-        } else {
-          alert("Failed to get payment URL. Please try again.");
-        }
-      } else {
-        const error = await response.json();
-        alert(error.message || "Failed to create payment session");
-      }
-    } catch (err) {
-      console.error("Error initiating payment:", err);
-      alert("An error occurred. Please try again.");
-    } finally {
-      setProcessingPayment(false);
     }
   };
 
@@ -269,7 +245,8 @@ export default function CertificationPage() {
     }
   };
 
-  if (loading) {
+  const hasPaid = paymentStatus?.status === "completed";
+  if (loading || !paymentStatusFetched) {
     return (
       <AuthGuard>
         <main className="min-h-screen bg-gradient-to-b from-[#0a1a2e] via-[#1e3a5f] to-[#0a1a2e] relative overflow-hidden">
@@ -283,7 +260,9 @@ export default function CertificationPage() {
     );
   }
 
-  const hasPaid = paymentStatus?.status === "completed";
+  if (!hasPaid) {
+    return null;
+  }
   const canDownload = hasPaid && !downloading;
 
   return (
@@ -387,65 +366,35 @@ export default function CertificationPage() {
               </div>
             </div>
 
-            {/* Payment/Download Section */}
+            {/* Download Section - only paid users reach this page */}
             <div className="bg-gradient-to-br from-[#1a1f3a]/95 to-[#0a0e27]/95 backdrop-blur-lg rounded-2xl border-2 border-blue-500/30 shadow-2xl p-6 md:p-8">
-              {!hasPaid ? (
-                <div className="text-center">
-                  <div className="mb-6">
-                    <div className="inline-block p-4 bg-yellow-500/20 rounded-full mb-4">
-                      <svg className="w-12 h-12 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                      Download Your Certificate
-                    </h3>
-                    <p className="text-gray-300 text-base md:text-lg mb-4">
-                      Get your official PDF certificate for just $200
-                    </p>
-                    <div className="bg-blue-500/20 border border-blue-400/50 rounded-lg p-4 mb-6">
-                      <p className="text-blue-200 text-sm md:text-base">
-                        <span className="font-semibold">What's included:</span> Professional PDF certificate, Official verification, Lifetime access
-                      </p>
-                    </div>
-                    <button
-                      onClick={handlePayment}
-                      disabled={processingPayment}
-                      className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-yellow-500 via-orange-500 to-red-500 hover:from-yellow-400 hover:via-orange-400 hover:to-red-400 text-white font-bold text-lg md:text-xl rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-2xl shadow-yellow-500/50 hover:shadow-yellow-500/70 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {processingPayment ? "Processing..." : "Pay $200 & Download PDF"}
-                    </button>
+              <div className="text-center">
+                <div className="mb-6">
+                  <div className="inline-block p-4 bg-green-500/20 rounded-full mb-4">
+                    <svg className="w-12 h-12 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                   </div>
-                </div>
-              ) : (
-                <div className="text-center">
-                  <div className="mb-6">
-                    <div className="inline-block p-4 bg-green-500/20 rounded-full mb-4">
-                      <svg className="w-12 h-12 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                    </div>
-                    <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
-                      Payment Successful!
-                    </h3>
-                    <p className="text-gray-300 text-base md:text-lg mb-6">
-                      You can now download your certificate
+                  <h3 className="text-2xl md:text-3xl font-bold text-white mb-2">
+                    Your Certificate
+                  </h3>
+                  <p className="text-gray-300 text-base md:text-lg mb-6">
+                    Download your official PDF certificate
+                  </p>
+                  <button
+                    onClick={() => downloadPDF(false)}
+                    disabled={!canDownload}
+                    className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white font-bold text-lg md:text-xl rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-2xl shadow-blue-500/50 hover:shadow-blue-500/70 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {downloading ? "Generating PDF..." : "📥 Download PDF Certificate"}
+                  </button>
+                  {!paymentStatus?.pdfDownloaded && (
+                    <p className="text-sm text-gray-400 mt-2">
+                      Your certificate is ready to download anytime
                     </p>
-                    <button
-                      onClick={() => downloadPDF(false)}
-                      disabled={!canDownload}
-                      className="w-full md:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white font-bold text-lg md:text-xl rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-2xl shadow-blue-500/50 hover:shadow-blue-500/70 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {downloading ? "Generating PDF..." : "📥 Download PDF Certificate"}
-                    </button>
-                    {hasPaid && !paymentStatus?.pdfDownloaded && (
-                      <p className="text-sm text-gray-400 mt-2">
-                        Your certificate is ready to download anytime
-                      </p>
-                    )}
-                  </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>

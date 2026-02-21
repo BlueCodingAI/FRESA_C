@@ -747,7 +747,7 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                             <span className="text-4xl mr-2">🎊</span>
                             <br className="md:hidden" />
                             <span className="block mt-2 md:inline">
-                              Outstanding! You've successfully passed the End-of-Course Exam! Your achievement will be recorded and you will receive a completion certificate.
+                              Congratulations on passing the End-Of-Course Exam! After payment, you will receive the Certificate of Completion of the 63 Hour Pre Licensing Course, and will become eligible to take the Florida Real Estate Sales Associate Exam.
                             </span>
                           </>
                         ) : (
@@ -854,12 +854,12 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                   <div className="flex flex-col sm:flex-row gap-3">
                     <button
                       onClick={() => {
-                        // First call onComplete to save progress
                         handleViewResultsComplete();
-                        // For End-of-Course Exam: navigate to certification page
                         if (isEndOfCourseExam && passed) {
-                          router.push("/certification");
-                        } else if (isLastChapter && onGoToExams) {
+                          router.push("/certification/pay");
+                          return;
+                        }
+                        if (isLastChapter && onGoToExams) {
                           onGoToExams();
                         } else if (onContinueToNextChapter) {
                           onContinueToNextChapter();
@@ -876,7 +876,7 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                       <span className="relative z-10 flex items-center justify-center gap-2 whitespace-nowrap">
                         {isEndOfCourseExam && passed ? (
                           <>
-                            🏆 Get Certification
+                            Pay $200
                             <svg className="w-5 h-5 transform group-hover:translate-x-1 transition-transform flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                             </svg>
