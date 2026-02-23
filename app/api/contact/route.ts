@@ -8,6 +8,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}))
     const name = (body?.name || '').toString().trim()
     const email = (body?.email || '').toString().trim().toLowerCase()
+    const phone = (body?.phone || '').toString().trim()
     const message = (body?.message || '').toString().trim()
 
     if (!name || !email || !message) {
@@ -68,6 +69,7 @@ CONTACT INFORMATION
 
 Contact Form filled out by: ${name}
 Email Address:              ${email}
+Phone Number:               ${phone || '—'}
 Registration Date:           ${formattedRegistrationDate}
 Date Submitted:              ${submittedAt}
 
