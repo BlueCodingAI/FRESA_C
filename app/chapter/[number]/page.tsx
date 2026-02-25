@@ -148,9 +148,9 @@ export default function ChapterPage() {
         ?.split("=")[1];
 
       if (!token) {
-        // Not logged in - redirect to login or introduction
-        alert("Please log in to access chapters.");
-        router.push("/login");
+        // Not logged in - prompt to register and go to sign up
+        alert("Please register to save your progress");
+        router.push("/signup");
         setAccessChecked(true);
         return;
       }
