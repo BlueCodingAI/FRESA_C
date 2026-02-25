@@ -118,6 +118,15 @@ export async function POST(request: NextRequest) {
       role: user.role,
     })
 
+    // Students who passed end-of-course but haven't paid: suggest redirect to certification pay
+    let needsCertificationPay = false
+    if (user.role === 'Student' && user.endOfCoursePassedAt) {
+      const paid = await prisma.certificatePayment.findFirst({
+        where: { userId: user.id, status: 'completed' },
+      })
+      if (!paid) needsCertificationPay = true
+    }
+
     // Create response with user data
     const response = NextResponse.json({
       user: {
@@ -129,6 +138,7 @@ export async function POST(request: NextRequest) {
         role: user.role,
       },
       token,
+      ...(needsCertificationPay ? { needsCertificationPay: true } : {}),
     })
 
     // Set cookie in response (server-side)

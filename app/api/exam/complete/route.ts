@@ -37,6 +37,12 @@ export async function POST(request: NextRequest) {
     const passed = percentage >= 70 // End-of-Course Exam passing score is 70%
     
     if (examType === 'end-of-course' && passed) {
+      // Persist that user passed end-of-course exam (for post-login redirect to pay)
+      await prisma.user.updateMany({
+        where: { id: decoded.id, endOfCoursePassedAt: null },
+        data: { endOfCoursePassedAt: new Date() },
+      }).catch(() => {})
+
       const notifyTo = process.env.ADMIN_NOTIFY_EMAIL
       if (notifyTo) {
         const finishDate = new Date().toLocaleString('en-US', {

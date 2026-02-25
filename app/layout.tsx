@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "../styles/globals.css";
+import CertificationPayRedirect from "@/components/CertificationPayRedirect";
 
 export const metadata: Metadata = {
   title: "Florida Real Estate Sales Associate Course",
@@ -28,7 +29,10 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body>{children}</body>
+      <body>
+        <CertificationPayRedirect />
+        {children}
+      </body>
     </html>
   );
 }

@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
           phone: true,
           role: true,
           emailVerified: true,
+          endOfCoursePassedAt: true,
         },
       })
 
@@ -120,7 +121,16 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ user })
+    // Students who passed end-of-course but haven't paid: front-end will redirect to pay
+    let needsCertificationPay = false
+    if (user.role === 'Student' && user.endOfCoursePassedAt) {
+      const paid = await prisma.certificatePayment.findFirst({
+        where: { userId: user.id, status: 'completed' },
+      })
+      if (!paid) needsCertificationPay = true
+    }
+
+    return NextResponse.json({ user, needsCertificationPay })
   } catch (error: any) {
     console.error('Auth check error:', error)
     console.error('Error type:', error?.constructor?.name)

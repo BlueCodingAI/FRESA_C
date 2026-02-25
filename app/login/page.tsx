@@ -82,6 +82,10 @@ export default function LoginPage() {
         setTimeout(() => {
           window.location.href = "/admin";
         }, 100);
+      } else if (data.needsCertificationPay) {
+        // Student passed end-of-course exam but hasn't paid — take them to Pay $200
+        console.log('Student needs to pay for certificate, redirecting to /certification/pay');
+        window.location.href = "/certification/pay";
       } else {
         console.log('Regular user, redirecting to home');
         window.location.href = "/";
