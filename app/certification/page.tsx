@@ -293,46 +293,47 @@ export default function CertificationPage() {
                   <div className="absolute bottom-0 right-0 w-32 h-32 border-b-4 border-r-4 border-yellow-600"></div>
                 </div>
 
-                {/* Certificate Content */}
+                {/* Certificate Content - Florida Listings Real Estate School */}
                 <div className="relative z-10 text-center">
+                  {/* Logo (place Florida Listings logo at public/certificate-logo.png) */}
+                  <div className="mb-6 flex justify-center">
+                    <img
+                      src="/certificate-logo.png"
+                      alt="Florida Listings Real Estate School"
+                      className="h-24 w-auto md:h-28 object-contain rounded-lg"
+                      onError={(e) => {
+                        const el = e.target as HTMLImageElement;
+                        el.style.display = "none";
+                      }}
+                    />
+                  </div>
+
                   {/* Certificate Header */}
-                  <div className="mb-8">
-                    <div className="inline-block mb-4">
-                      <svg className="w-20 h-20 md:w-24 md:h-24 text-yellow-600" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5zm0 2.18L20 8v9c0 4.54-3.07 8.76-8 9.82-4.93-1.06-8-5.28-8-9.82V8l8-3.82z"/>
-                        <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zm0 8c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3z"/>
-                      </svg>
-                    </div>
+                  <div className="mb-6">
                     <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-yellow-800 mb-2">
                       Certificate of Completion
                     </h2>
                     <p className="text-lg md:text-xl text-gray-700">
-                      Florida Real Estate Course
+                      Florida Listings Real Estate School Certifies that
                     </p>
                   </div>
 
-                  {/* This Certifies */}
-                  <div className="my-8 md:my-12">
-                    <p className="text-xl md:text-2xl text-gray-700 mb-6">
-                      This is to certify that
-                    </p>
+                  {/* Recipient Name */}
+                  <div className="my-6 md:my-8">
                     <div className="border-b-4 border-yellow-600 mx-auto max-w-md mb-6">
                       <h3 className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 py-4">
-                        {user?.name || "Student Name"}
+                        {user?.name || "Name"}
                       </h3>
                     </div>
-                    <p className="text-lg md:text-xl text-gray-700 mt-6">
-                      has successfully completed the End-of-Course Examination
-                    </p>
                     <p className="text-lg md:text-xl text-gray-700">
-                      and is hereby awarded this Certificate of Completion
+                      has completed the 63 hours pre licensing course for real estate Sales Associates, and is now qualified to take the Florida State Exam
                     </p>
                   </div>
 
-                  {/* Date and Signature Section */}
-                  <div className="mt-12 md:mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+                  {/* Date and Certificate ID */}
+                  <div className="mt-10 md:mt-14 grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 max-w-xl mx-auto">
                     <div>
-                      <div className="border-t-2 border-gray-400 pt-4 mt-16">
+                      <div className="border-t-2 border-gray-400 pt-4 mt-8">
                         <p className="text-gray-600 font-semibold">Date</p>
                         <p className="text-gray-800 text-lg mt-2">
                           {new Date().toLocaleDateString("en-US", {
@@ -344,23 +345,25 @@ export default function CertificationPage() {
                       </div>
                     </div>
                     <div>
-                      <div className="border-t-2 border-gray-400 pt-4 mt-16">
+                      <div className="border-t-2 border-gray-400 pt-4 mt-8">
                         <p className="text-gray-600 font-semibold">Certificate ID</p>
                         <p className="text-gray-800 text-lg mt-2 font-mono">
-                          {user?.id.slice(0, 8).toUpperCase()}
+                          {paymentStatus?.id?.slice(0, 8).toUpperCase() || user?.id?.slice(0, 8).toUpperCase() || "—"}
                         </p>
                       </div>
                     </div>
                   </div>
 
                   {/* Footer */}
-                  <div className="mt-12 md:mt-16 pt-8 border-t-2 border-gray-300">
-                    <p className="text-sm md:text-base text-gray-600">
-                      63Hours Real Estate Education
-                    </p>
-                    <p className="text-xs md:text-sm text-gray-500 mt-2">
-                      This certificate verifies successful completion of the required course material and examination.
-                    </p>
+                  <div className="mt-10 md:mt-14 pt-6 border-t-2 border-gray-300">
+                    <a
+                      href="https://63hours.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-base md:text-lg text-blue-600 hover:text-blue-700 font-medium"
+                    >
+                      63hours.com
+                    </a>
                   </div>
                 </div>
               </div>

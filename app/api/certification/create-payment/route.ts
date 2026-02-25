@@ -70,8 +70,8 @@ export async function POST(request: NextRequest) {
           price_data: {
             currency: "usd",
             product_data: {
-              name: "Florida Real Estate Course - Certificate",
-              description: "Official PDF Certificate of Completion",
+              name: "Florida Listings Real Estate School - Certificate of Completion",
+              description: "63 hours pre licensing course for real estate Sales Associates - Official PDF Certificate",
             },
             unit_amount: 20000, // $200.00
           },
