@@ -66,11 +66,11 @@ export async function POST(request: NextRequest) {
         const passStatus = 'PASSED ✅'
 
         const studentName = user.name || user.email
-        const subject = `${studentName} Completed End-of-Course Exam on 63Hours.com`
+        const subject = `${studentName} passed End-of-Course Exam on 63Hours.com`
         
         const text = `Dear Administrator,
 
-A student has completed the End-of-Course Exam on 63Hours.com.
+A student has passed the End-of-Course Exam on 63Hours.com.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STUDENT INFORMATION

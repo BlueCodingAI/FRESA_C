@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendEmail } from "@/lib/email";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
@@ -56,6 +57,8 @@ export async function POST(request: NextRequest) {
         });
       }
 
+      let completedUserId: string | null = null;
+
       if (payment) {
         // Update payment status to completed
         await prisma.certificatePayment.update({
@@ -65,7 +68,7 @@ export async function POST(request: NextRequest) {
             stripePaymentId: session.id, // Ensure session ID is saved
           },
         });
-
+        completedUserId = payment.userId;
         console.log("✅ Payment marked as completed:", {
           paymentId: payment.id,
           userId: payment.userId,
@@ -75,7 +78,7 @@ export async function POST(request: NextRequest) {
         // If payment record doesn't exist, create one
         const userId = session.metadata?.userId || session.client_reference_id;
         if (userId) {
-          await prisma.certificatePayment.create({
+          const created = await prisma.certificatePayment.create({
             data: {
               userId: userId as string,
               stripePaymentId: session.id,
@@ -83,9 +86,63 @@ export async function POST(request: NextRequest) {
               status: "completed",
             },
           });
+          completedUserId = created.userId;
           console.log("✅ Created new payment record for session:", session.id);
         } else {
           console.error("❌ No user ID found in session metadata or client_reference_id");
+        }
+      }
+
+      // Send admin email when certificate payment is completed
+      if (completedUserId) {
+        const notifyTo = process.env.ADMIN_NOTIFY_EMAIL;
+        if (notifyTo) {
+          try {
+            const user = await prisma.user.findUnique({
+              where: { id: completedUserId },
+              select: { name: true, email: true, createdAt: true },
+            });
+            if (user) {
+              const studentName = user.name || user.email;
+              const paidAt = new Date().toLocaleString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                timeZoneName: "short",
+              });
+              const subject = `${studentName} – Certificate payment completed on 63Hours.com`;
+              const text = `Dear Administrator,
+
+A student has completed payment for the certificate on 63Hours.com.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STUDENT INFORMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Name:              ${studentName}
+Email Address:     ${user.email}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+PAYMENT DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Date:              ${paidAt}
+Amount:            $200 (Certificate of Completion)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This is an automated notification from the 63Hours.com certification system.
+
+Best regards,
+63Hours.com System`;
+              await sendEmail({ to: notifyTo, subject, text });
+              console.log("✅ Payment notification email sent to:", notifyTo);
+            }
+          } catch (emailErr: any) {
+            console.error("❌ Failed to send payment notification email:", emailErr?.message);
+          }
         }
       }
     }

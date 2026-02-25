@@ -31,12 +31,21 @@ export async function POST(request: NextRequest) {
     })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
+    const percentage = total > 0 ? Math.round((score / total) * 100) : 0
+    const passed = percentage >= 80 // Chapter quiz pass threshold
+
+    // Only send email when student passes the quiz
     const notifyTo = process.env.ADMIN_NOTIFY_EMAIL
-    if (!notifyTo) {
-      return NextResponse.json({ ok: true, skipped: true })
+    if (!notifyTo || !passed) {
+      return NextResponse.json({ ok: true })
     }
 
-    // Format dates nicely
+    const chapter = await prisma.chapter.findUnique({
+      where: { number: chapterNumber },
+      select: { title: true },
+    })
+    const chapterName = chapter?.title ? `Chapter ${chapterNumber}: ${chapter.title}` : `Chapter ${chapterNumber}`
+
     const finishDate = new Date().toLocaleString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -45,7 +54,6 @@ export async function POST(request: NextRequest) {
       minute: '2-digit',
       timeZoneName: 'short'
     })
-    
     const registrationDate = new Date(user.createdAt).toLocaleString('en-US', {
       year: 'numeric',
       month: 'long',
@@ -55,17 +63,11 @@ export async function POST(request: NextRequest) {
       timeZoneName: 'short'
     })
 
-    // Calculate percentage
-    const percentage = total > 0 ? Math.round((score / total) * 100) : 0
-    const passStatus = percentage >= 70 ? 'PASSED ✅' : 'FAILED ❌'
-
     const studentName = user.name || user.email
-    const subject = `${studentName} Completed Chapter ${chapterNumber} Quiz on 63Hours.com`
-    
-    // Professional and structured email template
+    const subject = `${studentName} passed quiz: ${chapterName} on 63Hours.com`
     const text = `Dear Administrator,
 
-A student has completed a chapter quiz on 63Hours.com.
+A student has passed a chapter quiz on 63Hours.com.
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STUDENT INFORMATION
@@ -76,13 +78,13 @@ Email Address:     ${user.email}
 Registration Date: ${registrationDate}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-QUIZ COMPLETION DETAILS
+QUIZ PASSED
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Chapter #:         ${chapterNumber}
+Chapter:           ${chapterName}
 Finish Date:       ${finishDate}
 Score:             ${score} out of ${total} (${percentage}%)
-Status:            ${passStatus}
+Status:            PASSED ✅
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -91,16 +93,13 @@ This is an automated notification from the 63Hours.com quiz system.
 Best regards,
 63Hours.com System`
 
-    console.log('[Quiz Complete] Sending completion email to:', notifyTo)
+    console.log('[Quiz Complete] Sending pass notification to:', notifyTo)
     try {
-      console.log('[Quiz Complete] CALLING sendEmail...')
       await sendEmail({ to: notifyTo, subject, text })
       console.log('[Quiz Complete] ✅ Email sent successfully')
       return NextResponse.json({ ok: true })
     } catch (emailError: any) {
       console.error('[Quiz Complete] ❌ FAILED to send email:', emailError)
-      console.error('[Quiz Complete] Error message:', emailError.message)
-      console.error('[Quiz Complete] Error stack:', emailError.stack)
       return NextResponse.json({ error: 'Failed to send completion email' }, { status: 500 })
     }
   } catch (e: any) {
