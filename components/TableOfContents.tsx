@@ -48,6 +48,18 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
     }
   }, [activeSectionId, items]);
 
+  // Expand the current chapter by path so Quiz and sections show on first open of the nav
+  useEffect(() => {
+    if (!pathname || !items.length) return;
+    const isChapterPath = pathname.match(/\/chapter\/\d+/);
+    if (!isChapterPath) return;
+    items.forEach((item) => {
+      if (item.isChapter && item.path === pathname && item.children?.length) {
+        setExpandedChapters((prev) => (prev.has(item.id) ? prev : new Set(prev).add(item.id)));
+      }
+    });
+  }, [pathname, items]);
+
   const toggleChapter = (chapterId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     setExpandedChapters(prev => {

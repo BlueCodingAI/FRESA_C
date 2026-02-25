@@ -111,7 +111,7 @@ export default function IntroductionPage() {
       { id: "intro", title: "Introduction", path: "/introduction" },
     ];
     
-    // Add all chapters with their sections
+    // Add all chapters with their sections + Chapter N Quiz (same as chapter page)
     allChapters.forEach((chapter) => {
       const chapterSections = chapter.sections 
         ? chapter.sections.map((section: any, index: number) => ({
@@ -122,12 +122,19 @@ export default function IntroductionPage() {
           }))
         : [];
       
+      const quizChild = {
+        id: `chapter-${chapter.id}-quiz`,
+        title: `Chapter ${chapter.number} Quiz`,
+        path: `/chapter/${chapter.number}`,
+        sectionId: 'quiz',
+      };
+      
       items.push({
         id: `chapter-${chapter.id}`,
         title: `Chapter ${chapter.number}. ${chapter.title}`,
         path: `/chapter/${chapter.number}`,
         isChapter: true,
-        children: chapterSections,
+        children: [...chapterSections, quizChild],
       });
     });
     
