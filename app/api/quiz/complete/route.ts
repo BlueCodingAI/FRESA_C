@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
 import { sendEmail } from '@/lib/email'
+import { getEmailTemplate } from '@/lib/email-templates'
 
 export async function POST(request: NextRequest) {
   try {
@@ -66,34 +67,16 @@ export async function POST(request: NextRequest) {
     })
 
     const studentName = user.name || user.email
-    const subject = `${studentName} passed quiz: ${chapterName} on 63Hours.com`
-    const text = `Dear Administrator,
-
-A student has passed a chapter quiz on 63Hours.com.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-STUDENT INFORMATION
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Name:              ${studentName}
-Email Address:     ${user.email}
-Registration Date: ${registrationDate}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-QUIZ PASSED
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Chapter:           ${chapterName}
-Finish Date:       ${finishDate}
-Score:             ${score} out of ${total} (${percentage}%)
-Status:            PASSED ✅
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-This is an automated notification from the 63Hours.com quiz system.
-
-Best regards,
-63Hours.com System`
+    const { subject, body: text } = await getEmailTemplate(prisma, 'quiz_passed', {
+      studentName,
+      email: user.email,
+      registrationDate,
+      chapterName,
+      finishDate,
+      score,
+      total,
+      percentage,
+    })
 
     console.log('[Quiz Complete] Sending pass notification to:', notifyTo)
     try {

@@ -468,6 +468,22 @@ export default function AdminPage() {
             </p>
           </div>
 
+          {/* Email Templates */}
+          <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-amber-500/20 p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 md:mb-4 gap-3">
+              <h2 className="text-lg md:text-xl font-bold text-white">Email Templates</h2>
+              <Link
+                href="/admin/email-templates"
+                className="px-3 py-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-amber-500/50 transition-all duration-300 text-sm w-full sm:w-auto text-center"
+              >
+                Edit
+              </Link>
+            </div>
+            <p className="text-gray-400 text-xs md:text-sm">
+              Edit subject and body for registration, contact, password reset, and other outgoing emails
+            </p>
+          </div>
+
           {/* Chapter Quiz Settings */}
           <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-blue-500/20 p-4 md:p-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 md:mb-4 gap-3">

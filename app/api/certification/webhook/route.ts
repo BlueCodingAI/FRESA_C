@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "@/lib/email";
+import { getEmailTemplate } from "@/lib/email-templates";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
@@ -113,31 +114,11 @@ export async function POST(request: NextRequest) {
                 timeZone: "America/New_York",
                 timeZoneName: "short",
               });
-              const subject = `${studentName} – Certificate payment completed on 63Hours.com`;
-              const text = `Dear Administrator,
-
-A student has completed payment for the certificate on 63Hours.com.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-STUDENT INFORMATION
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Name:              ${studentName}
-Email Address:     ${user.email}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-PAYMENT DETAILS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Date:              ${paidAt}
-Amount:            $200 (Certificate of Completion)
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-This is an automated notification from the 63Hours.com certification system.
-
-Best regards,
-63Hours.com System`;
+              const { subject, body: text } = await getEmailTemplate(prisma, "payment_completed", {
+                studentName,
+                email: user.email,
+                paidAt,
+              });
               await sendEmail({ to: notifyTo, subject, text });
               console.log("✅ Payment notification email sent to:", notifyTo);
             }

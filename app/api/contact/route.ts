@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
 import { sendEmail } from '@/lib/email'
+import { getEmailTemplate } from '@/lib/email-templates'
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,19 +17,9 @@ export async function POST(request: NextRequest) {
     }
 
     // Send confirmation email to the person who submitted the form
-    const confirmSubject = 'Contact Request on 63Hours.com'
-    const confirmText = `Hello ${name},
-
-Thanks for contacting 63hours.com.
-
-We have received your message and will respond back ASAP.
-
-This is an automated notification from the 63Hours.com Contact Form System.
-
-63Hours.com
-https://63hours.com`
     try {
-      await sendEmail({ to: email, subject: confirmSubject, text: confirmText })
+      const { subject, body: confirmText } = await getEmailTemplate(prisma, 'contact_confirmation', { name })
+      await sendEmail({ to: email, subject, text: confirmText })
       console.log('[Contact] ✅ Confirmation email sent to submitter:', email)
     } catch (confirmErr: any) {
       console.error('[Contact] Failed to send confirmation to submitter:', confirmErr?.message)
@@ -78,35 +69,14 @@ https://63hours.com`
       })
     }
 
-    const subject = `Contact Form on 63Hours.com from ${name}`
-    
-    // Professional and structured email template
-    const text = `Dear Administrator,
-
-You have received a new contact form submission on 63Hours.com.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-CONTACT INFORMATION
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Contact Form filled out by: ${name}
-Email Address:              ${email}
-Phone Number:               ${phone || '—'}
-Registration Date:           ${formattedRegistrationDate}
-Date Submitted:              ${submittedAt}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-MESSAGE
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-${message}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-This is an automated notification from the 63Hours.com contact form system.
-
-Best regards,
-63Hours.com System`
+    const { subject, body: text } = await getEmailTemplate(prisma, 'contact_admin', {
+      name,
+      email,
+      phone: phone || '—',
+      message,
+      submittedAt,
+      registrationDate: formattedRegistrationDate,
+    })
 
     console.log('[Contact] Sending contact form email to:', notifyTo)
     try {

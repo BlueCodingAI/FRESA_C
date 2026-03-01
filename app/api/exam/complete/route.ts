@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
 import { sendEmail } from '@/lib/email'
+import { getEmailTemplate } from '@/lib/email-templates'
 
 // POST - Complete End-of-Course Exam
 export async function POST(request: NextRequest) {
@@ -65,37 +66,16 @@ export async function POST(request: NextRequest) {
           timeZoneName: 'short'
         })
 
-        const passStatus = 'PASSED ✅'
-
         const studentName = user.name || user.email
-        const subject = `${studentName} passed End-of-Course Exam on 63Hours.com`
-        
-        const text = `Dear Administrator,
-
-A student has passed the End-of-Course Exam on 63Hours.com.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-STUDENT INFORMATION
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Name:              ${studentName}
-Email Address:     ${user.email}
-Registration Date: ${registrationDate}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-END-OF-COURSE EXAM COMPLETION DETAILS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Finish Date:       ${finishDate}
-Score:             ${score} out of ${total} (${percentage}%)
-Status:            ${passStatus}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-This is an automated notification from the 63Hours.com exam system.
-
-Best regards,
-63Hours.com System`
+        const { subject, body: text } = await getEmailTemplate(prisma, 'exam_passed', {
+          studentName,
+          email: user.email,
+          registrationDate,
+          finishDate,
+          score,
+          total,
+          percentage,
+        })
 
         console.log('[End-of-Course Exam] Sending completion email to:', notifyTo)
         try {

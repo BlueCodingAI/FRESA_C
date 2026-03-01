@@ -157,6 +157,19 @@ model Settings {
   updatedAt DateTime @updatedAt
 }
 
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  key       String   @unique // e.g. contact_confirmation, signup_verification
+  name      String   // Display name for admin UI
+  subject   String   @db.Text
+  body      String   @db.Text
+  htmlBody  String?  @db.Text // Optional HTML version
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}
+
 model ChapterQuizSettings {
   id        String   @id @default(cuid())
   chapterNumber Int      @unique

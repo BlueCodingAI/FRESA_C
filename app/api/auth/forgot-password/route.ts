@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
+import { getEmailTemplate } from '@/lib/email-templates'
 import crypto from 'crypto'
 
 function sha256Hex(input: string): string {
@@ -71,8 +72,10 @@ export async function POST(request: NextRequest) {
     const siteUrl = process.env.SITE_URL || 'http://localhost:3000'
     const resetLink = `${siteUrl.replace(/\/$/, '')}/reset-password?token=${encodeURIComponent(token)}`
 
-    const subject = 'Reset your 63Hours.com password'
-    const text = `You requested a password reset.\n\nReset link:\n${resetLink}\n\nThis link expires in 1 hour. If you did not request this, you can ignore this email.`
+    const { subject, body: text } = await getEmailTemplate(prisma, 'forgot_password', {
+      resetLink,
+      name: user.name,
+    })
 
     console.log('[forgot-password] ========== PREPARING EMAIL ==========')
     console.log('[forgot-password] Email recipient:', user.email)

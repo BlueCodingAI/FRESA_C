@@ -4,6 +4,7 @@ import { hashPassword } from '@/lib/auth'
 import { UserRole } from '@prisma/client'
 import { z } from 'zod'
 import { sendEmail } from '@/lib/email'
+import { getEmailTemplate } from '@/lib/email-templates'
 import crypto from 'crypto'
 
 const signupSchema = z.object({
@@ -184,8 +185,10 @@ export async function POST(request: NextRequest) {
       console.log('[Signup] Token in link (first 20 chars):', verificationToken.substring(0, 20) + '...')
       console.log('[Signup] Token hash that should match:', tokenHash)
       
-      const subject = 'Verify your email - 63Hours.com'
-      const text = `Welcome to 63Hours.com!\n\nPlease verify your email address by clicking the link below:\n\n${verificationLink}\n\nThis link will expire in 24 hours.\n\nIf you did not create this account, you can safely ignore this email.`
+      const { subject, body: text } = await getEmailTemplate(prisma, 'signup_verification', {
+        name: user.name,
+        verificationLink,
+      })
       
       console.log('[Signup] CALLING sendEmail for verification...')
       await sendEmail({ to: user.email, subject, text })
@@ -206,9 +209,6 @@ export async function POST(request: NextRequest) {
       const notifyTo = process.env.ADMIN_NOTIFY_EMAIL
       if (notifyTo) {
         console.log('[Signup] Sending admin notification to:', notifyTo)
-        const subject = 'New Registration on 63Hours.com'
-        
-        // Format registration date nicely
         const registrationDate = new Date(user.createdAt).toLocaleString('en-US', {
           year: 'numeric',
           month: 'long',
@@ -218,27 +218,11 @@ export async function POST(request: NextRequest) {
           timeZone: 'America/New_York',
           timeZoneName: 'short'
         })
-        
-        // Professional and structured email template
-        const text = `Dear Administrator,
-
-A new user has registered on 63Hours.com.
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-REGISTRATION DETAILS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-Name:              ${user.name}
-Email Address:     ${user.email}
-Registration Date: ${registrationDate}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-This is an automated notification from the 63Hours.com registration system.
-
-Best regards,
-63Hours.com System`
-        
+        const { subject, body: text } = await getEmailTemplate(prisma, 'signup_admin', {
+          name: user.name,
+          email: user.email,
+          registrationDate,
+        })
         await sendEmail({ to: notifyTo, subject, text })
         adminEmailSent = true
         console.log('[Signup] ✅ Admin notification sent')

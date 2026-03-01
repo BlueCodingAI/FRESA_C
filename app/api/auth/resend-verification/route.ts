@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { sendEmail } from '@/lib/email'
+import { getEmailTemplate } from '@/lib/email-templates'
 import crypto from 'crypto'
 
 function sha256Hex(input: string): string {
@@ -67,8 +68,10 @@ export async function POST(request: NextRequest) {
       const siteUrl = process.env.SITE_URL || 'http://localhost:3000'
       const verificationLink = `${siteUrl.replace(/\/$/, '')}/verify-email?token=${encodeURIComponent(verificationToken)}`
       
-      const subject = 'Verify your email - 63Hours.com'
-      const text = `Welcome to 63Hours.com!\n\nPlease verify your email address by clicking the link below:\n\n${verificationLink}\n\nThis link will expire in 24 hours.\n\nIf you did not request this verification email, you can safely ignore it.`
+      const { subject, body: text } = await getEmailTemplate(prisma, 'resend_verification', {
+        verificationLink,
+        name: user.name,
+      })
       
       console.log('[Resend Verification] CALLING sendEmail...')
       await sendEmail({ to: user.email, subject, text })
