@@ -110,6 +110,7 @@ export async function POST(request: NextRequest) {
                 day: "numeric",
                 hour: "2-digit",
                 minute: "2-digit",
+                timeZone: "America/New_York",
                 timeZoneName: "short",
               });
               const subject = `${studentName} – Certificate payment completed on 63Hours.com`;

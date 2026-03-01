@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'America/New_York',
       timeZoneName: 'short'
     })
     const registrationDate = new Date(user.createdAt).toLocaleString('en-US', {
@@ -60,6 +61,7 @@ export async function POST(request: NextRequest) {
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
+      timeZone: 'America/New_York',
       timeZoneName: 'short'
     })
 

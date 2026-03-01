@@ -340,6 +340,7 @@ export default function CertificationPage() {
                             year: "numeric",
                             month: "long",
                             day: "numeric",
+                            timeZone: "America/New_York",
                           })}
                         </p>
                       </div>
