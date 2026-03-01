@@ -133,7 +133,7 @@ export default function ContactPage() {
                 {/* Name Field */}
                 <div>
                   <label htmlFor="name" className="block text-xs md:text-sm font-medium text-gray-300 mb-1.5">
-                    Full Name
+                    Full Name <span className="text-red-400">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -156,7 +156,7 @@ export default function ContactPage() {
                 {/* Email Field */}
                 <div>
                   <label htmlFor="email" className="block text-xs md:text-sm font-medium text-gray-300 mb-1.5">
-                    Email Address
+                    Email Address <span className="text-red-400">*</span>
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -202,7 +202,7 @@ export default function ContactPage() {
               {/* Message Field */}
               <div>
                 <label htmlFor="message" className="block text-xs md:text-sm font-medium text-gray-300 mb-1.5">
-                  Message
+                  Message <span className="text-red-400">*</span>
                 </label>
                 <div className="relative">
                   <div className="absolute top-2.5 left-3 pointer-events-none">

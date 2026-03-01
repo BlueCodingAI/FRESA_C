@@ -11,6 +11,7 @@ interface Student {
   email: string;
   phone: string | null;
   createdAt: string;
+  quizzesPassed: number;
 }
 
 export default function AdminStudentsPage() {
@@ -110,7 +111,7 @@ export default function AdminStudentsPage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 md:mb-6 gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-white">Students</h1>
-            <p className="text-gray-400 text-xs md:text-sm">Name, Email, Phone, Date of Registration</p>
+            <p className="text-gray-400 text-xs md:text-sm">Name, Email, Phone, Quizzes Passed, Date of Registration</p>
           </div>
           <div className="flex gap-3">
             <Link
@@ -151,6 +152,10 @@ export default function AdminStudentsPage() {
                     <div className="text-gray-300 text-sm">{s.phone || "—"}</div>
                   </div>
                   <div>
+                    <div className="text-xs text-gray-400 mb-1">Chapter quizzes passed</div>
+                    <div className="text-cyan-300 text-sm font-medium">{s.quizzesPassed ?? 0}</div>
+                  </div>
+                  <div>
                     <div className="text-xs text-gray-400 mb-1">Registered</div>
                     <div className="text-gray-300 text-sm">{new Date(s.createdAt).toLocaleString()}</div>
                   </div>
@@ -175,6 +180,7 @@ export default function AdminStudentsPage() {
                   <th className="px-4 py-3 text-gray-300 text-sm font-semibold">Name</th>
                   <th className="px-4 py-3 text-gray-300 text-sm font-semibold">Email</th>
                   <th className="px-4 py-3 text-gray-300 text-sm font-semibold">Phone</th>
+                  <th className="px-4 py-3 text-gray-300 text-sm font-semibold">Quizzes passed</th>
                   <th className="px-4 py-3 text-gray-300 text-sm font-semibold">Registered</th>
                   <th className="px-4 py-3 text-gray-300 text-sm font-semibold text-right">Actions</th>
                 </tr>
@@ -182,7 +188,7 @@ export default function AdminStudentsPage() {
               <tbody>
                 {students.length === 0 ? (
                   <tr>
-                    <td className="px-4 py-6 text-gray-400" colSpan={5}>
+                    <td className="px-4 py-6 text-gray-400" colSpan={6}>
                       No students yet.
                     </td>
                   </tr>
@@ -192,6 +198,7 @@ export default function AdminStudentsPage() {
                       <td className="px-4 py-3 text-white">{s.name || "(no name)"}</td>
                       <td className="px-4 py-3 text-cyan-200">{s.email}</td>
                       <td className="px-4 py-3 text-gray-300">{s.phone || "—"}</td>
+                      <td className="px-4 py-3 text-cyan-300 font-medium">{s.quizzesPassed ?? 0}</td>
                       <td className="px-4 py-3 text-gray-300">
                         {new Date(s.createdAt).toLocaleString()}
                       </td>

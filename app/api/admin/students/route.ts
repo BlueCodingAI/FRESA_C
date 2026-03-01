@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     const user = verifyToken(token)
     if (!user || !canEdit(user.role)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
 
-    const students = await prisma.user.findMany({
+    const users = await prisma.user.findMany({
       where: { role: 'Student' },
       orderBy: { createdAt: 'desc' },
       select: {
@@ -21,8 +21,21 @@ export async function GET(request: NextRequest) {
         email: true,
         phone: true,
         createdAt: true,
+        progress: {
+          where: { quizCompleted: true },
+          select: { id: true },
+        },
       },
     })
+
+    const students = users.map((u) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      phone: u.phone,
+      createdAt: u.createdAt,
+      quizzesPassed: u.progress.length,
+    }))
 
     return NextResponse.json({ students })
   } catch (e) {
