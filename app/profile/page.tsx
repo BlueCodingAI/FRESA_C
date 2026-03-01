@@ -249,7 +249,7 @@ export default function ProfilePage() {
         <main className="min-h-screen bg-gradient-to-b from-[#0a1a2e] via-[#1e3a5f] to-[#0a1a2e] relative overflow-hidden">
           <Header />
           <StarsBackground />
-          <div className="relative z-10 min-h-screen flex items-center justify-center pt-20 pb-8 px-4 md:px-8 md:ml-64 md:pt-24">
+          <div className="relative z-10 min-h-screen flex items-center justify-center pt-20 pb-8 px-4 sm:px-6 md:px-8 md:ml-64 md:pt-24">
             <div className="text-white text-xl">Loading profile...</div>
           </div>
         </main>
@@ -263,14 +263,14 @@ export default function ProfilePage() {
         <Header />
         <StarsBackground />
 
-        <div className="relative z-10 min-h-screen flex flex-col pt-20 pb-8 px-4 md:px-8 md:ml-64 md:pt-24">
-          <div className="max-w-3xl mx-auto w-full">
+        <div className="relative z-10 min-h-screen flex flex-col pt-20 pb-8 px-4 sm:px-6 md:px-8 md:ml-64 md:pt-24">
+          <div className="max-w-3xl mx-auto w-full min-w-0">
             {/* Page Header */}
-            <div className="mb-8">
-              <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 mb-2">
+            <div className="mb-6 md:mb-8">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-400 mb-2">
                 My Profile
               </h1>
-              <p className="text-gray-400">Manage your account information and settings</p>
+              <p className="text-gray-400 text-sm sm:text-base">Manage your account information and settings</p>
             </div>
 
             {/* Error/Success Messages */}
@@ -286,23 +286,23 @@ export default function ProfilePage() {
             )}
 
             {/* Profile Card */}
-            <div className="bg-[#1e3a5f]/90 backdrop-blur-lg border border-blue-500/30 rounded-2xl shadow-2xl p-6 md:p-8">
+            <div className="bg-[#1e3a5f]/90 backdrop-blur-lg border border-blue-500/30 rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8 overflow-hidden">
               {!editing && !changingPassword ? (
                 /* View Mode */
                 <>
-                  <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                      <div className={`w-16 h-16 rounded-full bg-gradient-to-r ${getRoleColor(user?.role || "Student")} flex items-center justify-center text-white text-2xl font-bold`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6 mb-6">
+                    <div className="flex items-center gap-4 min-w-0">
+                      <div className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-r ${getRoleColor(user?.role || "Student")} flex items-center justify-center text-white text-xl sm:text-2xl font-bold`}>
                         {user?.name?.charAt(0).toUpperCase() || "U"}
                       </div>
-                      <div>
-                        <h2 className="text-2xl font-bold text-white">{user?.name}</h2>
-                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${getRoleColor(user?.role || "Student")} text-white`}>
+                      <div className="min-w-0">
+                        <h2 className="text-xl sm:text-2xl font-bold text-white truncate">{user?.name}</h2>
+                        <span className={`inline-block mt-1 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r ${getRoleColor(user?.role || "Student")} text-white`}>
                           {user?.role === "Student" ? "RE Ninja 🥷" : user?.role}
                         </span>
                       </div>
                     </div>
-                    <div className="flex gap-3">
+                    <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
                       <button
                         onClick={() => {
                           setChangingPassword(true);
@@ -310,7 +310,7 @@ export default function ProfilePage() {
                           setError("");
                           setSuccess("");
                         }}
-                        className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all"
+                        className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all text-sm sm:text-base"
                       >
                         Change Password
                       </button>
@@ -321,7 +321,7 @@ export default function ProfilePage() {
                           setError("");
                           setSuccess("");
                         }}
-                        className="px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg transition-all"
+                        className="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg transition-all text-sm sm:text-base"
                       >
                         Edit Profile
                       </button>
@@ -329,20 +329,20 @@ export default function ProfilePage() {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-4 bg-[#0a1a2e]/50 rounded-lg border border-blue-500/20">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                      <div className="p-3 sm:p-4 bg-[#0a1a2e]/50 rounded-lg border border-blue-500/20 min-w-0">
                         <label className="text-gray-400 text-sm mb-1 block">Email</label>
-                        <p className="text-white font-medium">{user?.email}</p>
+                        <p className="text-white font-medium break-all">{user?.email}</p>
                       </div>
-                      <div className="p-4 bg-[#0a1a2e]/50 rounded-lg border border-blue-500/20">
+                      <div className="p-3 sm:p-4 bg-[#0a1a2e]/50 rounded-lg border border-blue-500/20 min-w-0">
                         <label className="text-gray-400 text-sm mb-1 block">Username</label>
-                        <p className="text-white font-medium">{user?.username}</p>
+                        <p className="text-white font-medium break-all">{user?.username}</p>
                       </div>
-                      <div className="p-4 bg-[#0a1a2e]/50 rounded-lg border border-blue-500/20">
+                      <div className="p-3 sm:p-4 bg-[#0a1a2e]/50 rounded-lg border border-blue-500/20 min-w-0">
                         <label className="text-gray-400 text-sm mb-1 block">Phone</label>
                         <p className="text-white font-medium">{user?.phone || "Not provided"}</p>
                       </div>
-                      <div className="p-4 bg-[#0a1a2e]/50 rounded-lg border border-blue-500/20">
+                      <div className="p-3 sm:p-4 bg-[#0a1a2e]/50 rounded-lg border border-blue-500/20 min-w-0">
                         <label className="text-gray-400 text-sm mb-1 block">Member Since</label>
                         <p className="text-white font-medium">Active User</p>
                       </div>
@@ -352,9 +352,9 @@ export default function ProfilePage() {
               ) : changingPassword ? (
                 /* Change Password Mode */
                 <form onSubmit={handlePasswordChange} className="space-y-6">
-                  <div className="flex items-center justify-between mb-6">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                     <div>
-                      <h3 className="text-xl font-bold text-white">Change Password</h3>
+                      <h3 className="text-lg sm:text-xl font-bold text-white">Change Password</h3>
                       <p className="text-gray-400 text-sm mt-1">Update your password to keep your account secure</p>
                     </div>
                     <button
@@ -371,7 +371,7 @@ export default function ProfilePage() {
                           confirmPassword: "",
                         }));
                       }}
-                      className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all"
+                      className="w-full sm:w-auto px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all order-first sm:order-none"
                     >
                       Cancel
                     </button>
@@ -426,11 +426,11 @@ export default function ProfilePage() {
                     </div>
                   </div>
 
-                  <div className="flex gap-4 pt-4 border-t border-blue-500/20">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4 border-t border-blue-500/20">
                     <button
                       type="submit"
                       disabled={saving}
-                      className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all"
+                      className="w-full sm:flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all"
                     >
                       {saving ? "Changing Password..." : "Change Password"}
                     </button>
@@ -448,7 +448,7 @@ export default function ProfilePage() {
                           confirmPassword: "",
                         }));
                       }}
-                      className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all"
+                      className="w-full sm:w-auto px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all"
                     >
                       Cancel
                     </button>
@@ -457,8 +457,8 @@ export default function ProfilePage() {
               ) : (
                 /* Edit Mode */
                 <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-bold text-white">Edit Profile</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
+                    <h3 className="text-lg sm:text-xl font-bold text-white">Edit Profile</h3>
                     <button
                       type="button"
                       onClick={() => {
@@ -468,7 +468,7 @@ export default function ProfilePage() {
                         setSuccess("");
                         fetchUser(); // Reset form
                       }}
-                      className="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all"
+                      className="w-full sm:w-auto px-4 py-2.5 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all order-first sm:order-none"
                     >
                       Cancel
                     </button>
@@ -537,11 +537,11 @@ export default function ProfilePage() {
                   </div>
 
 
-                  <div className="flex gap-4 pt-4">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
                     <button
                       type="submit"
                       disabled={saving}
-                      className="flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all"
+                      className="w-full sm:flex-1 px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all"
                     >
                       {saving ? "Saving..." : "Save Changes"}
                     </button>
@@ -554,7 +554,7 @@ export default function ProfilePage() {
                         setSuccess("");
                         fetchUser();
                       }}
-                      className="px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all"
+                      className="w-full sm:w-auto px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all"
                     >
                       Cancel
                     </button>

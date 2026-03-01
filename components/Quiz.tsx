@@ -974,19 +974,16 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                     </div>
                   </div>
                 ) : (
-                  // End-of-Course Exam: No retry, just show message and return to home
+                  // End-of-Course Exam: No retry, offer practice exam
                   <div className="text-center">
-                    <p className="text-gray-300 text-sm md:text-base mb-6 leading-relaxed">
-                      End-of-Course Exam does not allow retries. According to state law, you must wait <span className="font-bold text-yellow-300">30 days</span> before you can retake this exam.
-                    </p>
                     <button
                       onClick={() => {
                         handleViewResultsComplete();
-                        router.push("/");
+                        router.push("/practice-exam");
                       }}
                       className={`w-full ${isEndOfCourseExam ? 'px-4 py-2.5 md:px-6 md:py-3 rounded-xl text-sm md:text-base' : 'px-6 py-3 rounded-xl text-base'} bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white font-bold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/40 hover:shadow-blue-500/60`}
                     >
-                      Return to Home
+                      Take Practice Exam
                     </button>
                   </div>
                 )
