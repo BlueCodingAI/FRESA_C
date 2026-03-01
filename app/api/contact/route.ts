@@ -15,6 +15,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Name, email, and message are required' }, { status: 400 })
     }
 
+    // Send confirmation email to the person who submitted the form
+    const confirmSubject = 'Contact Request on 63Hours.com'
+    const confirmText = `Hello ${name},
+
+Thanks for contacting 63hours.com.
+
+We have received your message and will respond back ASAP.
+
+This is an automated notification from the 63Hours.com Contact Form System.
+
+63Hours.com
+https://63hours.com`
+    try {
+      await sendEmail({ to: email, subject: confirmSubject, text: confirmText })
+      console.log('[Contact] ✅ Confirmation email sent to submitter:', email)
+    } catch (confirmErr: any) {
+      console.error('[Contact] Failed to send confirmation to submitter:', confirmErr?.message)
+      // Don't fail the request - admin may still get the notification
+    }
+
     const token =
       request.headers.get('authorization')?.replace('Bearer ', '') ||
       request.cookies.get('auth-token')?.value

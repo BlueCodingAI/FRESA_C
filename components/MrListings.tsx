@@ -53,10 +53,10 @@ export default function MrListings({
   // Consistent sizing - all sizes use same proportions, just scaled
   const baseSize = size === "large" ? 100 : size === "medium" ? 70 : 50;
 
-  // Determine emotion state
-  const isHappy = currentAnimation === "thumbs-up" || currentAnimation === "congratulations";
-  const isSad = currentAnimation === "thumbs-down";
-  const isEnthusiastic = currentAnimation === "congratulations";
+  // Always use original character appearance (no happy/sad/enthusiastic face or body)
+  const isHappy = false;
+  const isSad = false;
+  const isEnthusiastic = false;
 
   return (
     <div 
