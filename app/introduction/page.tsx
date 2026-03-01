@@ -177,7 +177,7 @@ export default function IntroductionPage() {
                   text={introText}
                   audioUrl={audioUrl}
                   timestampsUrl={timestampsUrl}
-                  autoPlay={true}
+                  autoPlay={false}
                   highlightQuery={searchHighlight}
                 />
               )}

@@ -977,7 +977,7 @@ export default function ChapterPage() {
                     text={currentSectionData.text}
                     audioUrl={currentSectionData.audioUrl || undefined}
                     timestampsUrl={currentSectionData.timestampsUrl || undefined}
-                    autoPlay={!hasAutoPlayedFirst && !!currentSectionData.audioUrl}
+                    autoPlay={false}
                     onComplete={handleAudioComplete}
                     onPlayingChange={(isPlaying) => {
                       if (isPlaying) {
