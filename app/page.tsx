@@ -123,13 +123,13 @@ export default function Home() {
         {/* App Name */}
         <div className={`mb-12 transition-all duration-1000 ${isReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-4 animate-fade-in">
-            Florida Real Estate
+            THE EASIEST WAY
           </h1>
           <h2 className="text-2xl md:text-4xl lg:text-5xl font-semibold text-blue-300 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-            Sales Associate Course
+            TO GET A REAL ESTATE LICENSE
           </h2>
           <div className="mt-6 text-lg md:text-xl text-gray-300 animate-fade-in" style={{ animationDelay: "0.6s" }}>
-            63 Hour Pre-License Education
+            IN FLORIDA
           </div>
         </div>
 
