@@ -452,6 +452,38 @@ export default function AdminPage() {
             </p>
           </div>
 
+          {/* About Us Page Editor */}
+          <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-cyan-500/20 p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 md:mb-4 gap-3">
+              <h2 className="text-lg md:text-xl font-bold text-white">About Us</h2>
+              <Link
+                href="/admin/about-us"
+                className="px-3 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-cyan-500/50 transition-all duration-300 text-sm w-full sm:w-auto text-center"
+              >
+                Edit
+              </Link>
+            </div>
+            <p className="text-gray-400 text-xs md:text-sm">
+              Edit the public About Us page content
+            </p>
+          </div>
+
+          {/* Pricing Page Editor */}
+          <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-violet-500/20 p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 md:mb-4 gap-3">
+              <h2 className="text-lg md:text-xl font-bold text-white">Pricing</h2>
+              <Link
+                href="/admin/pricing"
+                className="px-3 py-2 bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-violet-500/50 transition-all duration-300 text-sm w-full sm:w-auto text-center"
+              >
+                Edit
+              </Link>
+            </div>
+            <p className="text-gray-400 text-xs md:text-sm">
+              Edit the public Pricing page content
+            </p>
+          </div>
+
           {/* Additional Questions Editor */}
           <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-green-500/20 p-4 md:p-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 md:mb-4 gap-3">

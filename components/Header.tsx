@@ -79,8 +79,20 @@ export default function Header() {
             63Hours
           </Link>
 
-          {/* Desktop: Contact and Search hidden on welcome page; UserMenu always */}
+          {/* Desktop: About Us, Pricing, Contact, Search; Contact+Search hidden on welcome page */}
           <div className="hidden md:flex items-center gap-3">
+            <Link
+              href="/about-us"
+              className="px-3 py-2 rounded-lg border border-blue-500/30 text-blue-200 hover:bg-blue-500/10 transition-all text-sm"
+            >
+              About Us
+            </Link>
+            <Link
+              href="/pricing"
+              className="px-3 py-2 rounded-lg border border-blue-500/30 text-blue-200 hover:bg-blue-500/10 transition-all text-sm"
+            >
+              Pricing
+            </Link>
             {!isHomePage && (
               <>
                 <Link
@@ -144,7 +156,20 @@ export default function Header() {
           />
           <div className="fixed top-16 right-0 bottom-0 w-64 min-h-[calc(100vh-4rem)] bg-[#0a1a2e] border-l border-cyan-500/30 z-[60] shadow-xl md:hidden overflow-y-auto">
             <div className="p-4 space-y-3">
-              {/* Contact - hidden on welcome page */}
+              <Link
+                href="/about-us"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block w-full px-4 py-3 rounded-lg border border-blue-500/30 text-blue-200 hover:bg-blue-500/10 transition-all text-center font-medium"
+              >
+                About Us
+              </Link>
+              <Link
+                href="/pricing"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="block w-full px-4 py-3 rounded-lg border border-blue-500/30 text-blue-200 hover:bg-blue-500/10 transition-all text-center font-medium"
+              >
+                Pricing
+              </Link>
               {!isHomePage && (
                 <Link
                   href="/contact"

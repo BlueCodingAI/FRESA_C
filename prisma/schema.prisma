@@ -170,6 +170,17 @@ model EmailTemplate {
   @@index([key])
 }
 
+// Editable CMS pages: About Us, Pricing (content editable from admin)
+model CmsPage {
+  id        String   @id @default(cuid())
+  key       String   @unique // "about_us" | "pricing"
+  title     String   // Page title (e.g. "About Us", "Pricing")
+  content   String   @db.Text // HTML content from rich text editor
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}
+
 model ChapterQuizSettings {
   id        String   @id @default(cuid())
   chapterNumber Int      @unique
