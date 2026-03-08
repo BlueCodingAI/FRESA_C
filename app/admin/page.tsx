@@ -516,6 +516,22 @@ export default function AdminPage() {
             </p>
           </div>
 
+          {/* Communication - Sent emails */}
+          <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-teal-500/20 p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 md:mb-4 gap-3">
+              <h2 className="text-lg md:text-xl font-bold text-white">Communication</h2>
+              <Link
+                href="/admin/communication"
+                className="px-3 py-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white font-semibold rounded-lg shadow-lg hover:shadow-teal-500/50 transition-all duration-300 text-sm w-full sm:w-auto text-center"
+              >
+                View sent emails
+              </Link>
+            </div>
+            <p className="text-gray-400 text-xs md:text-sm">
+              View all sent emails, filter by recipient, and see emails grouped by date
+            </p>
+          </div>
+
           {/* Chapter Quiz Settings */}
           <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-blue-500/20 p-4 md:p-6">
             <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-3 md:mb-4 gap-3">

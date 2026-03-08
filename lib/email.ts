@@ -3,11 +3,28 @@
  * Replaces Mailgun implementation
  */
 
+import { prisma } from './prisma'
+
+const BODY_PREVIEW_MAX_LEN = 2000
+
 export interface EmailOptions {
   to: string
   subject: string
   text: string
   from?: string
+}
+
+async function logSentEmail(to: string, subject: string, body: string) {
+  try {
+    const emailLog = (prisma as any).emailLog
+    if (!emailLog) return
+    const bodyPreview = body.slice(0, BODY_PREVIEW_MAX_LEN)
+    await emailLog.create({
+      data: { to, subject, bodyPreview },
+    })
+  } catch (e) {
+    console.error('[Email Service] Failed to log sent email:', e)
+  }
 }
 
 export async function sendEmail(opts: EmailOptions) {
@@ -96,6 +113,8 @@ export async function sendEmail(opts: EmailOptions) {
 
     const responseText = await res.text().catch(() => '')
     console.log('[Email Service] Email sent successfully. Response:', responseText)
+
+    await logSentEmail(opts.to, opts.subject, opts.text)
 
     return { success: true, message: responseText }
   } catch (error: any) {

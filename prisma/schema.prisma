@@ -218,6 +218,19 @@ model CertificatePayment {
   @@index([status])
 }
 
+// Log of all sent emails for admin Communication page
+model EmailLog {
+  id          String   @id @default(cuid())
+  to          String   // Recipient email
+  subject     String   @db.Text
+  bodyPreview String   @db.Text // First portion of body (e.g. 2000 chars) for listing
+  sentAt      DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@index([to])
+  @@index([sentAt])
+}
+
 enum UserRole {
   Admin
   Developer
