@@ -12,6 +12,7 @@ export default function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   const showCourseNavButton = pathname === "/introduction" || (pathname?.startsWith("/chapter/") ?? false);
+  const isHomePage = pathname === "/";
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -78,25 +79,29 @@ export default function Header() {
             63Hours
           </Link>
 
-          {/* Desktop: Show Contact, Search, UserMenu */}
+          {/* Desktop: Contact and Search hidden on welcome page; UserMenu always */}
           <div className="hidden md:flex items-center gap-3">
-            <Link
-              href="/contact"
-              className="px-3 py-2 rounded-lg border border-blue-500/30 text-blue-200 hover:bg-blue-500/10 transition-all text-sm"
-            >
-              Contact
-            </Link>
-            <SearchBar />
+            {!isHomePage && (
+              <>
+                <Link
+                  href="/contact"
+                  className="px-3 py-2 rounded-lg border border-blue-500/30 text-blue-200 hover:bg-blue-500/10 transition-all text-sm"
+                >
+                  Contact
+                </Link>
+                <SearchBar />
+              </>
+            )}
             <UserMenu />
           </div>
 
-          {/* Mobile: Search Icon and Hamburger Menu Button */}
+          {/* Mobile: Search icon hidden on welcome page; Hamburger always */}
           <div className="md:hidden flex items-center gap-2">
-            {/* Search Icon - Icon only on mobile */}
-            <div className="[&_button]:!p-2 [&_button]:!border [&_button]:!border-cyan-500/30 [&_button]:!rounded-lg [&_button]:!text-cyan-400 [&_button]:hover:!bg-cyan-500/10 [&_button]:!transition-all [&_button]:!bg-transparent [&_span]:!hidden [&_kbd]:!hidden [&_svg]:!w-6 [&_svg]:!h-6">
-              <SearchBar />
-            </div>
-            
+            {!isHomePage && (
+              <div className="[&_button]:!p-2 [&_button]:!border [&_button]:!border-cyan-500/30 [&_button]:!rounded-lg [&_button]:!text-cyan-400 [&_button]:hover:!bg-cyan-500/10 [&_button]:!transition-all [&_button]:!bg-transparent [&_span]:!hidden [&_kbd]:!hidden [&_svg]:!w-6 [&_svg]:!h-6">
+                <SearchBar />
+              </div>
+            )}
             {/* Hamburger Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -139,19 +144,40 @@ export default function Header() {
           />
           <div className="fixed top-16 right-0 bottom-0 w-64 min-h-[calc(100vh-4rem)] bg-[#0a1a2e] border-l border-cyan-500/30 z-[60] shadow-xl md:hidden overflow-y-auto">
             <div className="p-4 space-y-3">
-              {/* Contact Button */}
-              <Link
-                href="/contact"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="block w-full px-4 py-3 rounded-lg border border-blue-500/30 text-blue-200 hover:bg-blue-500/10 transition-all text-center font-medium"
-              >
-                Contact
-              </Link>
+              {/* Contact - hidden on welcome page */}
+              {!isHomePage && (
+                <Link
+                  href="/contact"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="block w-full px-4 py-3 rounded-lg border border-blue-500/30 text-blue-200 hover:bg-blue-500/10 transition-all text-center font-medium"
+                >
+                  Contact
+                </Link>
+              )}
 
-              {/* User Menu Button */}
-              <div className="w-full">
-                <UserMenu />
-              </div>
+              {isAuthenticated !== true ? (
+                /* Login and Sign Up inside a thin box */
+                <div className="rounded-lg border border-cyan-500/30 p-3 space-y-2">
+                  <Link
+                    href="/login"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block w-full px-4 py-3 rounded-lg border border-blue-500/30 text-blue-200 hover:bg-blue-500/10 transition-all text-center font-medium"
+                  >
+                    Login
+                  </Link>
+                  <Link
+                    href="/signup"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="block w-full px-4 py-3 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-medium text-center transition-all"
+                  >
+                    Sign Up
+                  </Link>
+                </div>
+              ) : (
+                <div className="w-full">
+                  <UserMenu />
+                </div>
+              )}
             </div>
           </div>
         </>
