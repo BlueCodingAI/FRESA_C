@@ -105,9 +105,18 @@ export async function GET(request: NextRequest) {
       [shuffledAll[i], shuffledAll[j]] = [shuffledAll[j], shuffledAll[i]];
     }
 
+    // Ensure no duplicate questions by id (each question appears at most once)
+    const seenIds = new Set<string>();
+    const uniqueQuestions = shuffledAll.filter((q) => {
+      const id = String(q.id);
+      if (seenIds.has(id)) return false;
+      seenIds.add(id);
+      return true;
+    });
+
     return NextResponse.json({ 
-      questions: shuffledAll,
-      examQuestionCount: shuffledAll.length // Total questions available
+      questions: uniqueQuestions,
+      examQuestionCount: uniqueQuestions.length
     })
   } catch (error: any) {
     console.error('[Exam Questions GET] Error:', error)

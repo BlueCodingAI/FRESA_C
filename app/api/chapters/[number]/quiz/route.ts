@@ -57,9 +57,21 @@ export async function GET(
       orderBy: { order: 'asc' },
     })
 
-    // Shuffle and select the required number
-    const shuffled = [...allQuestions].sort(() => Math.random() - 0.5)
-    const selectedQuestions = shuffled.slice(0, Math.min(questionCount, allQuestions.length))
+    // Shuffle using Fisher-Yates (unbiased) and select the required number — no duplicate questions
+    const shuffled = [...allQuestions]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    const selected = shuffled.slice(0, Math.min(questionCount, allQuestions.length))
+    // Ensure no duplicate questions by id (each question appears at most once)
+    const seenIds = new Set<string>()
+    const selectedQuestions = selected.filter((q) => {
+      const id = String(q.id)
+      if (seenIds.has(id)) return false
+      seenIds.add(id)
+      return true
+    })
 
     // Format questions
     const formattedQuestions = selectedQuestions.map((q: any) => {
