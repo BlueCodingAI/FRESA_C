@@ -14,6 +14,8 @@ export const EMAIL_TEMPLATE_KEYS = [
   'resend_verification',
   'quiz_passed',
   'exam_passed',
+  'exam_failed_admin',
+  'exam_failed_30day_student',
   'payment_completed',
 ] as const
 
@@ -183,6 +185,53 @@ This is an automated notification from the 63Hours.com exam system.
 
 Best regards,
 63Hours.com System`,
+  },
+  exam_failed_admin: {
+    name: 'End-of-Course exam failed – notification (to admin)',
+    subject: '{{studentName}} failed End-of-Course Exam on 63Hours.com',
+    body: `Dear Administrator,
+
+A student has failed the End-of-Course Exam on 63Hours.com.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STUDENT INFORMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Name:              {{studentName}}
+Email Address:     {{email}}
+Registration Date: {{registrationDate}}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+END-OF-COURSE EXAM DETAILS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Finish Date:       {{finishDate}}
+Score:             {{score}} out of {{total}} ({{percentage}}%)
+Status:            FAILED ❌
+
+The student must wait 30 days before they can retake the End-of-Course Exam (per Florida Administrative Code / DBPR).
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+This is an automated notification from the 63Hours.com exam system.
+
+Best regards,
+63Hours.com System`,
+  },
+  exam_failed_30day_student: {
+    name: 'End-of-Course exam – 30-day wait (to student)',
+    subject: 'End-Of-Course Exam – 30 days start now',
+    body: `Dear {{name}},
+
+You must wait 30 days to take the End-of-Course Exam again. This is part of the Florida Administrative Code, enforced by the Florida Department of Business and Professional Regulation (DBPR) Real Estate Commission, which states that students who fail a Commission-prescribed end-of-course examination must wait at least 30 days from the original exam date before they are eligible to retest, and they may retest a maximum of one time within one year. If they fail again, they must repeat the course before being eligible to take the examination again.
+
+The next day you can take the End-of-Course Exam will be on {{nextEligibleDate}}.
+
+We recommend using these 30 days to ace the practice exam. This will help you to not only pass the End-Of-Course Exam, but will also prepare you for the Florida State Exam.
+
+Take the Practice Exam: {{practiceExamLink}}
+
+63hours.com`,
   },
   payment_completed: {
     name: 'Certificate payment – notification (to admin)',

@@ -19,6 +19,7 @@ model User {
   phone                String?
   username             String    @unique
   endOfCoursePassedAt  DateTime? // Set when user passes the End-of-Course exam (enables cert pay redirect)
+  endOfCourseFailedAt  DateTime? // Set when user fails EOC; 30-day lockout until this date + 30 days
 
   passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]

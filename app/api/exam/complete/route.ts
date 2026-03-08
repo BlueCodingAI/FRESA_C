@@ -33,12 +33,11 @@ export async function POST(request: NextRequest) {
     })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
-    // Only send email for End-of-Course Exam if passed (75%+)
     const percentage = total > 0 ? Math.round((score / total) * 100) : 0
     const passed = percentage >= 70 // End-of-Course Exam passing score is 70%
-    
+    const siteUrl = process.env.SITE_URL || 'https://63hours.com'
+
     if (examType === 'end-of-course' && passed) {
-      // Persist that user passed end-of-course exam (for post-login redirect to pay)
       await prisma.user.updateMany({
         where: { id: decoded.id, endOfCoursePassedAt: null },
         data: { endOfCoursePassedAt: new Date() },
@@ -55,7 +54,6 @@ export async function POST(request: NextRequest) {
           timeZone: 'America/New_York',
           timeZoneName: 'short'
         })
-        
         const registrationDate = new Date(user.createdAt).toLocaleString('en-US', {
           year: 'numeric',
           month: 'long',
@@ -65,7 +63,6 @@ export async function POST(request: NextRequest) {
           timeZone: 'America/New_York',
           timeZoneName: 'short'
         })
-
         const studentName = user.name || user.email
         const { subject, body: text } = await getEmailTemplate(prisma, 'exam_passed', {
           studentName,
@@ -76,14 +73,77 @@ export async function POST(request: NextRequest) {
           total,
           percentage,
         })
-
-        console.log('[End-of-Course Exam] Sending completion email to:', notifyTo)
         try {
           await sendEmail({ to: notifyTo, subject, text })
-          console.log('[End-of-Course Exam] ✅ Email sent successfully')
         } catch (emailError: any) {
-          console.error('[End-of-Course Exam] ❌ FAILED to send email:', emailError)
+          console.error('[End-of-Course Exam] Admin email failed:', emailError)
         }
+      }
+    }
+
+    if (examType === 'end-of-course' && !passed) {
+      const failedAt = new Date()
+      await prisma.user.update({
+        where: { id: decoded.id },
+        data: { endOfCourseFailedAt: failedAt },
+      }).catch(() => {})
+
+      const finishDate = failedAt.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'America/New_York',
+        timeZoneName: 'short'
+      })
+      const registrationDate = new Date(user.createdAt).toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'America/New_York',
+        timeZoneName: 'short'
+      })
+      const studentName = user.name || user.email
+
+      const notifyTo = process.env.ADMIN_NOTIFY_EMAIL
+      if (notifyTo) {
+        const { subject, body: text } = await getEmailTemplate(prisma, 'exam_failed_admin', {
+          studentName,
+          email: user.email,
+          registrationDate,
+          finishDate,
+          score,
+          total,
+          percentage,
+        })
+        try {
+          await sendEmail({ to: notifyTo, subject, text })
+        } catch (e: any) {
+          console.error('[End-of-Course Exam] Admin fail notification failed:', e)
+        }
+      }
+
+      const nextEligible = new Date(failedAt)
+      nextEligible.setDate(nextEligible.getDate() + 30)
+      const nextEligibleDate = nextEligible.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'America/New_York'
+      })
+      const practiceExamLink = `${siteUrl.replace(/\/$/, '')}/practice-exam`
+      const { subject: studentSubject, body: studentBody } = await getEmailTemplate(prisma, 'exam_failed_30day_student', {
+        name: studentName,
+        nextEligibleDate,
+        practiceExamLink,
+      })
+      try {
+        await sendEmail({ to: user.email, subject: studentSubject, text: studentBody })
+      } catch (e: any) {
+        console.error('[End-of-Course Exam] Student 30-day email failed:', e)
       }
     }
 
