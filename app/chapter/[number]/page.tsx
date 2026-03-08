@@ -48,6 +48,7 @@ export default function ChapterPage() {
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [searchHighlight, setSearchHighlight] = useState<string>("");
   const [showRegistrationPrompt, setShowRegistrationPrompt] = useState(false);
+  const [showAccessRegistrationPrompt, setShowAccessRegistrationPrompt] = useState(false);
   const [showQuizRegistrationPrompt, setShowQuizRegistrationPrompt] = useState(false);
   const [quizScore, setQuizScore] = useState<{ score: number; total: number } | null>(null);
   const [activePlayingSectionId, setActivePlayingSectionId] = useState<string | null>(null);
@@ -148,9 +149,8 @@ export default function ChapterPage() {
         ?.split("=")[1];
 
       if (!token) {
-        // Not logged in - prompt to register and go to sign up
-        alert("Please register to save your progress");
-        router.push("/signup");
+        // Not logged in - show Congratulations-style page (Register Now / Login), no redirect, no popup
+        setShowAccessRegistrationPrompt(true);
         setAccessChecked(true);
         return;
       }
@@ -565,8 +565,9 @@ export default function ChapterPage() {
       ?.split("=")[1];
     
     if (!token) {
-      // Not logged in - show registration prompt
+      // Not logged in - show only the Congratulations page (RegistrationPrompt), no quiz results behind it
       setQuizScore({ score, total });
+      setShowQuiz(false);
       setShowRegistrationPrompt(true);
       return;
     }
@@ -785,8 +786,8 @@ export default function ChapterPage() {
     return null;
   }
 
-  // Show loading or block access until access check is complete
-  if (!accessChecked || loading) {
+  // Show loading or block access until access check is complete (unless showing access registration prompt)
+  if ((!accessChecked || loading) && !showAccessRegistrationPrompt) {
     return (
       <main className="min-h-screen bg-gradient-to-b from-[#0a1a2e] via-[#1e3a5f] to-[#0a1a2e] relative overflow-hidden">
         <Header />
@@ -795,6 +796,35 @@ export default function ChapterPage() {
             <div className="text-white text-xl mb-4">Loading...</div>
             <div className="text-gray-400 text-sm">Checking chapter access...</div>
           </div>
+        </div>
+      </main>
+    );
+  }
+
+  // Not logged in and tried to access chapter > 1: show Congratulations-style page (no redirect, no popup)
+  if (showAccessRegistrationPrompt) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-[#0a1a2e] via-[#1e3a5f] to-[#0a1a2e] relative overflow-hidden">
+        <Header />
+        <StarsBackground />
+        <div className="relative z-10 min-h-screen flex items-center justify-center">
+          <RegistrationPrompt
+            variant="accessChapter"
+            onRegister={() => {
+              setShowAccessRegistrationPrompt(false);
+              sessionStorage.setItem("redirectAfterLogin", `/chapter/${chapterNumber}`);
+              router.push("/signup");
+            }}
+            onLogin={() => {
+              setShowAccessRegistrationPrompt(false);
+              sessionStorage.setItem("redirectAfterLogin", `/chapter/${chapterNumber}`);
+              router.push("/login");
+            }}
+            onSkip={() => {
+              setShowAccessRegistrationPrompt(false);
+              router.push("/chapter/1");
+            }}
+          />
         </div>
       </main>
     );

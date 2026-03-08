@@ -93,6 +93,15 @@ body {
   background: var(--accent);
 }
 
+/* Hide scrollbar but keep scroll (for modals) */
+.scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* Text selection */
 ::selection {
   background-color: var(--accent);
