@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import Header from "@/components/Header";
 import StarsBackground from "@/components/StarsBackground";
 
@@ -57,6 +58,14 @@ export default function AboutUsPage() {
                       prose-strong:text-white"
                     dangerouslySetInnerHTML={{ __html: content || "<p>No content yet.</p>" }}
                   />
+                  <div className="mt-8 pt-6 border-t border-cyan-500/20">
+                    <Link
+                      href="https://63hours.com/introduction"
+                      className="inline-flex items-center px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold transition-all"
+                    >
+                      See How It Works
+                    </Link>
+                  </div>
                 </>
               )}
             </div>

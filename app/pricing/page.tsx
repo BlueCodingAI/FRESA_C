@@ -60,10 +60,10 @@ export default function PricingPage() {
                   />
                   <div className="mt-8 pt-6 border-t border-cyan-500/20">
                     <Link
-                      href="/contact"
+                      href="https://63hours.com/introduction"
                       className="inline-flex items-center px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold transition-all"
                     >
-                      Contact us for details
+                      See How It Works
                     </Link>
                   </div>
                 </>
