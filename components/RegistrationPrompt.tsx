@@ -49,50 +49,25 @@ export default function RegistrationPrompt({
             </svg>
           </button>
 
-          <div className="flex justify-center mb-4 sm:mb-5">
+          <div className="flex justify-center mb-5 sm:mb-6">
             <div className="scale-90 sm:scale-100 origin-center">
               <MrListings size="medium" />
             </div>
           </div>
 
-          <h2 className="text-center text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-cyan-200 mb-1">
-            {isAccess ? "Register to Continue" : "Congratulations!"}
+          <h2 className="text-center text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 to-cyan-200 mb-2">
+            {isAccess ? "Register to Continue" : "Congratulations on completing Chapter 1."}
           </h2>
-          {!isAccess && (
-            <p className="text-center text-white/90 text-sm sm:text-base mb-4">Chapter 1 complete · Score {score}/{total}</p>
-          )}
-          {isAccess && (
-            <p className="text-center text-blue-200/95 text-sm sm:text-base mb-4">Register or log in to continue.</p>
-          )}
-
-          <div className="rounded-xl bg-[#0f1a2e]/80 border border-cyan-500/20 px-5 py-4 sm:px-6 sm:py-5 mb-5 sm:mb-6">
-            <p className="text-gray-300 text-sm sm:text-base leading-relaxed mb-3">
-              {isAccess
-                ? "Register for a free account to save your progress and access all chapters."
-                : "Register to save your progress and access all chapters."}
-            </p>
-            <ul className="text-gray-300 text-sm sm:text-base space-y-2 sm:space-y-2.5">
-              <li className="flex items-center gap-2.5">
-                <span className="text-emerald-400 text-base shrink-0">✓</span>
-                <span>Save your progress automatically</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <span className="text-emerald-400 text-base shrink-0">✓</span>
-                <span>Access all chapters and content</span>
-              </li>
-              <li className="flex items-center gap-2.5">
-                <span className="text-emerald-400 text-base shrink-0">✓</span>
-                <span>Track your learning journey</span>
-              </li>
-            </ul>
-          </div>
+          <p className="text-center text-gray-300 text-sm sm:text-base mb-6">
+            Register to save progress
+          </p>
 
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             <button
               onClick={onRegister}
               className="w-full sm:flex-1 h-12 rounded-xl bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-400 hover:to-cyan-400 text-white font-semibold text-base shadow-lg shadow-blue-500/25 active:scale-[0.98] transition-transform"
             >
-              Register Now
+              Register
             </button>
             <button
               onClick={onLogin}
@@ -101,13 +76,6 @@ export default function RegistrationPrompt({
               Login
             </button>
           </div>
-
-          <button
-            onClick={onSkip}
-            className="mt-4 sm:mt-5 w-full text-center text-gray-400 hover:text-gray-300 text-sm sm:text-base py-3 transition-colors"
-          >
-            Continue without registering
-          </button>
           </div>
         </div>
       </div>
