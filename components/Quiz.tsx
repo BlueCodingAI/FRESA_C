@@ -444,7 +444,6 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
     setIsCorrect(correct);
     setShowExplanation(true);
     setCurrentQuestionScore(correct ? 1 : 0);
-    // Reset explanation audio state to allow auto-play
     setHasAutoPlayedExplanation(false);
 
     if (correct) {
@@ -492,22 +491,9 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
     setAllQuestionAudioCompleted(false); // Reset completion flag
   }, [currentQuestionIndex]);
 
-  // Ensure explanation audio auto-plays when explanation is shown
   useEffect(() => {
     if (showExplanation) {
-      // Always reset hasAutoPlayedExplanation when explanation is first shown to ensure audio can play
       setHasAutoPlayedExplanation(false);
-      
-      const explanationAudioUrl = getExplanationAudioUrl();
-      if (explanationAudioUrl && process.env.NODE_ENV === 'development') {
-        console.log('🎵 Explanation audio should auto-play:', {
-          hasAudio: !!explanationAudioUrl,
-          audioUrl: explanationAudioUrl,
-          isCorrect,
-          selectedAnswer,
-          showExplanation,
-        });
-      }
     }
   }, [showExplanation]);
 
@@ -1121,7 +1107,7 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                 text={questionText}
                 audioUrl={currentQuestion.questionAudioUrl}
                 timestampsUrl={currentQuestion.questionTimestampsUrl || undefined}
-                autoPlay={true} // Always auto-play question audio when it loads
+                autoPlay={false}
                 hideText={true}
                 onHighlightedWord={handleHighlightedWord}
                 onComplete={() => {
@@ -1134,7 +1120,7 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                     : [];
                   if (optionAudios.length > 0 && optionAudios[0]) {
                     setCurrentOptionIndex(0);
-                    setHasAutoPlayedQuestion(false); // Allow option to auto-play
+                    setHasAutoPlayedQuestion(false);
                   } else {
                     // No options to play, mark all audio as completed
                     setHasAutoPlayedQuestion(true);
@@ -1168,7 +1154,7 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                   text={currentQuestion.options[currentOptionIndex]}
                   audioUrl={optionAudios[currentOptionIndex]}
                   timestampsUrl={optionTimestamps[currentOptionIndex] || undefined}
-                  autoPlay={true} // Always auto-play option audio when it loads
+                  autoPlay={false}
                   hideText={true}
                   onHighlightedWord={handleHighlightedWord}
                   onComplete={() => {
@@ -1181,7 +1167,7 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                     // Move to next option
                     if (currentOptionIndex < optionAudios.length - 1) {
                       setCurrentOptionIndex(currentOptionIndex + 1);
-                      setHasAutoPlayedQuestion(false); // Allow next option to auto-play
+                      setHasAutoPlayedQuestion(false);
                     } else {
                       // All options played, clear all highlights and stop
                       optionsRefs.current.forEach(removeHighlights);
@@ -1264,10 +1250,9 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                     text={getExplanationText()}
                     audioUrl={explanationAudioUrl}
                     timestampsUrl={explanationTimestampsUrl || undefined}
-                    autoPlay={true}
+                    autoPlay={false}
                     hideText={true}
                     onHighlightedWord={(word, wordIndex) => {
-                      // Debug logging in development
                       if (process.env.NODE_ENV === 'development') {
                         console.log('🎯 Quiz explanation handleHighlightedWord:', {
                           word,
