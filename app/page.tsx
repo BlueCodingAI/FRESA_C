@@ -45,13 +45,16 @@ export default function Home() {
       <div className="relative z-10 flex flex-col items-center justify-center text-center px-4 pt-20 md:pt-0">
         {/* App Name */}
         <div className={`mb-12 transition-all duration-1000 ${isReady ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+          <p className="text-sm md:text-base text-white/90 tracking-wide mb-4 animate-fade-in">
+            FLORIDA LISTINGS REAL ESTATE SCHOOL PRESENTS:
+          </p>
           <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-4 animate-fade-in">
             THE EASIEST WAY
           </h1>
           <h2 className="text-2xl md:text-4xl lg:text-5xl font-semibold text-blue-300 animate-fade-in" style={{ animationDelay: "0.3s" }}>
             TO GET A REAL ESTATE LICENSE
           </h2>
-          <div className="mt-6 text-lg md:text-xl text-gray-300 animate-fade-in" style={{ animationDelay: "0.6s" }}>
+          <div className="mt-6 text-2xl md:text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-amber-300 to-cyan-400 animate-fade-in drop-shadow-[0_0_20px_rgba(34,211,238,0.4)]" style={{ animationDelay: "0.6s" }}>
             IN FLORIDA
           </div>
         </div>
