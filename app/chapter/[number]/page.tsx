@@ -964,36 +964,26 @@ export default function ChapterPage() {
                 </h2>
               </div>
               
-              {/* Section Image - Full width, no side padding, edge-to-edge, cropped sides */}
+              {/* Section Image - Keep natural aspect ratio, centered in section */}
               {currentSectionData?.imageUrl && (
-                <div className="w-full overflow-hidden">
-                  <div className="relative w-full group">
-                    <div className="relative overflow-hidden shadow-2xl border-y-2 border-cyan-500/30 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 backdrop-blur-sm">
-                      <div className="relative w-full" style={{ paddingLeft: '15%', paddingRight: '15%', marginLeft: '-15%', marginRight: '-15%', width: '130%' }}>
-                        <img
-                          src={currentSectionData.imageUrl}
-                          alt={currentSectionData.title || "Section image"}
-                          className="w-full h-auto max-h-[400px] object-contain md:object-fill md:h-[400px] transition-transform duration-500 group-hover:scale-[1.01]"
-                          style={{ 
-                            width: '100%', 
-                            display: 'block'
-                          }}
-                          loading="lazy"
-                          onError={(e) => {
-                            const target = e.target as HTMLImageElement;
-                            target.style.display = 'none';
-                            const parent = target.parentElement;
-                            if (parent) {
-                              parent.innerHTML = '<div class="p-8 text-center text-gray-400">Image not found</div>';
-                            }
-                          }}
-                        />
-                      </div>
-                      {/* Decorative gradient overlay on hover */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/0 via-transparent to-transparent opacity-0 group-hover:opacity-20 transition-opacity duration-500 pointer-events-none" />
+                <div className="px-6 md:px-8 pb-2 md:pb-3">
+                  <div className="relative w-full group rounded-xl border border-cyan-500/25 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 backdrop-blur-sm p-3 md:p-4">
+                    <div className="w-full flex justify-center">
+                      <img
+                        src={currentSectionData.imageUrl}
+                        alt={currentSectionData.title || "Section image"}
+                        className="w-auto h-auto max-w-full max-h-[420px] object-contain transition-transform duration-500 group-hover:scale-[1.01]"
+                        loading="lazy"
+                        onError={(e) => {
+                          const target = e.target as HTMLImageElement;
+                          target.style.display = 'none';
+                          const parent = target.parentElement;
+                          if (parent) {
+                            parent.innerHTML = '<div class="p-8 text-center text-gray-400">Image not found</div>';
+                          }
+                        }}
+                      />
                     </div>
-                    {/* Glow effect */}
-                    <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 via-blue-500/20 to-purple-500/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 -z-10" />
                   </div>
                 </div>
               )}
