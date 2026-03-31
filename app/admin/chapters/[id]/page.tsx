@@ -1365,6 +1365,7 @@ export default function ChapterEditPage() {
                 order: section.order,
                 audioUrl: data.audioUrl,
                 timestampsUrl: data.timestampsUrl,
+                imageUrl: section.imageUrl || null,
               }),
             });
 

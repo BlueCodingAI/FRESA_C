@@ -63,11 +63,18 @@ export async function PUT(
     const { id } = await params
     const { sectionNumber, title, text, type, audioUrl, timestampsUrl, imageUrl, order } = await request.json()
 
-    // Validate that audio and timestamps files exist if URLs are provided
-    let validatedAudioUrl = audioUrl || null
-    let validatedTimestampsUrl = timestampsUrl || null
+    const existing = await prisma.section.findUnique({
+      where: { id },
+    })
+    if (!existing) {
+      return NextResponse.json({ error: 'Section not found' }, { status: 404 })
+    }
 
-    if (validatedAudioUrl) {
+    // Validate that audio and timestamps files exist if URLs are provided
+    let validatedAudioUrl = audioUrl === undefined ? existing.audioUrl : (audioUrl || null)
+    let validatedTimestampsUrl = timestampsUrl === undefined ? existing.timestampsUrl : (timestampsUrl || null)
+
+    if (audioUrl !== undefined && validatedAudioUrl) {
       // Remove leading slash and check if file exists in public/audio
       const audioPath = validatedAudioUrl.startsWith('/') ? validatedAudioUrl.slice(1) : validatedAudioUrl
       const fullAudioPath = join(process.cwd(), 'public', audioPath)
@@ -78,7 +85,7 @@ export async function PUT(
       }
     }
 
-    if (validatedTimestampsUrl) {
+    if (timestampsUrl !== undefined && validatedTimestampsUrl) {
       // Remove leading slash and check if file exists in public/timestamps
       const timestampsPath = validatedTimestampsUrl.startsWith('/') ? validatedTimestampsUrl.slice(1) : validatedTimestampsUrl
       const fullTimestampsPath = join(process.cwd(), 'public', timestampsPath)
@@ -90,8 +97,8 @@ export async function PUT(
     }
 
     // Validate image file if URL is provided (only for local files, allow external URLs)
-    let validatedImageUrl = imageUrl || null
-    if (validatedImageUrl && validatedImageUrl.startsWith('/')) {
+    let validatedImageUrl = imageUrl === undefined ? existing.imageUrl : (imageUrl || null)
+    if (imageUrl !== undefined && validatedImageUrl && validatedImageUrl.startsWith('/')) {
       // Only validate local files (starting with /), allow external URLs
       const imagePath = validatedImageUrl.startsWith('/') ? validatedImageUrl.slice(1) : validatedImageUrl
       const fullImagePath = join(process.cwd(), 'public', imagePath)
@@ -105,14 +112,14 @@ export async function PUT(
     const section = await prisma.section.update({
       where: { id },
       data: {
-        sectionNumber,
-        title,
-        text,
-        type,
+        sectionNumber: sectionNumber ?? existing.sectionNumber,
+        title: title ?? existing.title,
+        text: text ?? existing.text,
+        type: type ?? existing.type,
         audioUrl: validatedAudioUrl,
         timestampsUrl: validatedTimestampsUrl,
         imageUrl: validatedImageUrl,
-        order: order || 0,
+        order: order ?? existing.order,
       },
     })
 
