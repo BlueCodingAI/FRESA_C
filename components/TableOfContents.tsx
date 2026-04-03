@@ -84,6 +84,14 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
     if (!targetChapterNumber || targetChapterNumber <= 1) {
       return true; // Chapter 1 and introduction are always accessible
     }
+
+    // New rule: authenticated users always have Chapter 2 unlocked
+    const hasAuthToken = typeof document !== "undefined" && document.cookie
+      .split("; ")
+      .some((row) => row.startsWith("auth-token="));
+    if (hasAuthToken && targetChapterNumber <= 2) {
+      return true;
+    }
     
     // Check if all previous chapters (1 to targetChapterNumber - 1) have passed quizzes
     for (let chNum = 1; chNum < targetChapterNumber; chNum++) {

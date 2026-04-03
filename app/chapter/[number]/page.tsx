@@ -155,6 +155,12 @@ export default function ChapterPage() {
         return;
       }
 
+      // New rule: authenticated users always have Chapter 2 unlocked
+      if (chapterNumber <= 2) {
+        setAccessChecked(true);
+        return;
+      }
+
       // Fetch progress if not already loaded
       let progressToCheck = allUserProgress;
       if (progressToCheck.length === 0) {
