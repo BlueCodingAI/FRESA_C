@@ -199,7 +199,7 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
                     <div className="flex items-start gap-2">
                       {item.isChapter && hasChildren && (
                         <svg
-                          className={`shrink-0 size-4 mt-0.5 text-current transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`}
+                          className={`shrink-0 size-3 mt-0.5 text-current transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
@@ -208,7 +208,7 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       )}
-                      {!item.isChapter && hasChildren && <span className="size-4 shrink-0" aria-hidden="true" />}
+                      {!item.isChapter && hasChildren && <span className="size-3 shrink-0" aria-hidden="true" />}
                       {isLocked && <span className="shrink-0 text-xs">🔒</span>}
                       <span className={`min-w-0 flex-1 ${item.isChapter ? 'text-sm font-semibold' : 'text-xs'} leading-relaxed`}>
                         {item.title}
@@ -323,7 +323,7 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
                         <div className="flex items-start gap-2">
                           {item.isChapter && hasChildren && (
                             <svg
-                              className={`shrink-0 size-4 mt-0.5 text-current transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`}
+                              className={`shrink-0 size-3 mt-0.5 text-current transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`}
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -332,7 +332,7 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
                           )}
-                          {!item.isChapter && hasChildren && <span className="size-4 shrink-0" aria-hidden="true" />}
+                          {!item.isChapter && hasChildren && <span className="size-3 shrink-0" aria-hidden="true" />}
                           {isLocked && <span className="shrink-0 text-xs">🔒</span>}
                           <span className={`min-w-0 flex-1 ${item.isChapter ? 'text-sm font-semibold' : 'text-sm'} leading-relaxed`}>
                             {item.title}
