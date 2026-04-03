@@ -60,6 +60,39 @@ export default function ChapterPage() {
   const [showRetryMessage, setShowRetryMessage] = useState(false);
   const [quizShuffle, setQuizShuffle] = useState(false);
   const [quizRetryKey, setQuizRetryKey] = useState(0); // Key to force quiz reset on retry
+  const [courseNavAccess, setCourseNavAccess] = useState<"unknown" | "student" | "staff">("unknown");
+
+  const fullCourseAccess = courseNavAccess === "staff";
+
+  useEffect(() => {
+    const token = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("auth-token="))
+      ?.split("=")[1];
+
+    if (!token) {
+      setCourseNavAccess("student");
+      return;
+    }
+
+    fetch("/api/auth/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          setCourseNavAccess("student");
+          return;
+        }
+        const data = await res.json();
+        const role = data?.user?.role as string | undefined;
+        if (role === "Admin" || role === "Developer" || role === "Editor") {
+          setCourseNavAccess("staff");
+        } else {
+          setCourseNavAccess("student");
+        }
+      })
+      .catch(() => setCourseNavAccess("student"));
+  }, []);
 
   useEffect(() => {
     console.log('[ChapterPage] Mounted with chapterNumber:', chapterNumber);
@@ -96,8 +129,11 @@ export default function ChapterPage() {
           if (targetChapterNumber && targetChapterNumber !== chapterNumber) {
             // Trying to navigate to a different chapter - check if previous chapter is completed
             if (targetChapterNumber > chapterNumber) {
-              // Forward navigation - must have passed current chapter quiz
-              if (!userProgress || !userProgress.quizCompleted || userProgress.quizScore < (userProgress.quizTotal * 0.8)) {
+              // Forward navigation - must have passed current chapter quiz (staff bypass)
+              if (
+                !fullCourseAccess &&
+                (!userProgress || !userProgress.quizCompleted || userProgress.quizScore < (userProgress.quizTotal * 0.8))
+              ) {
                 alert("You must pass this chapter's quiz with at least 80% before proceeding to the next chapter.");
                 return;
               }
@@ -125,7 +161,7 @@ export default function ChapterPage() {
       window.removeEventListener("navigateToSection", handleNavigateToSection as EventListener);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [chapterNumber, router]);
+  }, [chapterNumber, router, fullCourseAccess, userProgress]);
 
   // Check chapter access when progress is loaded
   useEffect(() => {
@@ -157,6 +193,15 @@ export default function ChapterPage() {
 
       // New rule: authenticated users always have Chapter 2 unlocked
       if (chapterNumber <= 2) {
+        setAccessChecked(true);
+        return;
+      }
+
+      if (courseNavAccess === "unknown") {
+        return;
+      }
+
+      if (courseNavAccess === "staff") {
         setAccessChecked(true);
         return;
       }
@@ -197,7 +242,7 @@ export default function ChapterPage() {
     };
 
     checkChapterAccess();
-  }, [chapterNumber, allUserProgress, router]);
+  }, [chapterNumber, allUserProgress, router, courseNavAccess]);
 
   // When sections are loaded and currentSection is still empty (no sessionStorage restore), set from progress or first section
   useEffect(() => {
@@ -849,6 +894,7 @@ export default function ChapterPage() {
           activeSectionId={activePlayingSectionId || undefined}
           allUserProgress={allUserProgress}
           currentChapterNumber={chapterNumber}
+          fullCourseAccess={fullCourseAccess}
         />
         {!showRetryMessage && (
           <div className="relative z-10 min-h-screen flex flex-col items-center justify-center pt-20 pb-8 px-4 md:px-8 md:ml-64 md:pt-24">
@@ -934,6 +980,7 @@ export default function ChapterPage() {
         activeSectionId={activePlayingSectionId || undefined}
         allUserProgress={allUserProgress}
         currentChapterNumber={chapterNumber}
+        fullCourseAccess={fullCourseAccess}
       />
 
       <div className="relative z-10 min-h-screen flex flex-col pt-20 pb-8 px-4 md:px-8 md:ml-64 md:pt-24">

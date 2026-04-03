@@ -19,6 +19,39 @@ export default function IntroductionPage() {
   const [searchHighlight, setSearchHighlight] = useState<string>("");
   const [allChapters, setAllChapters] = useState<any[]>([]);
   const [allUserProgress, setAllUserProgress] = useState<any[]>([]); // All chapters' progress
+  const [courseNavAccess, setCourseNavAccess] = useState<"unknown" | "student" | "staff">("unknown");
+
+  const fullCourseAccess = courseNavAccess === "staff";
+
+  useEffect(() => {
+    const token = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("auth-token="))
+      ?.split("=")[1];
+
+    if (!token) {
+      setCourseNavAccess("student");
+      return;
+    }
+
+    fetch("/api/auth/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(async (res) => {
+        if (!res.ok) {
+          setCourseNavAccess("student");
+          return;
+        }
+        const data = await res.json();
+        const role = data?.user?.role as string | undefined;
+        if (role === "Admin" || role === "Developer" || role === "Editor") {
+          setCourseNavAccess("staff");
+        } else {
+          setCourseNavAccess("student");
+        }
+      })
+      .catch(() => setCourseNavAccess("student"));
+  }, []);
 
   useEffect(() => {
     fetchIntroduction();
@@ -152,6 +185,7 @@ export default function IntroductionPage() {
         currentPath="/introduction"
         allUserProgress={allUserProgress}
         currentChapterNumber={0}
+        fullCourseAccess={fullCourseAccess}
       />
 
       {/* Concentric circles */}

@@ -26,9 +26,11 @@ interface TableOfContentsProps {
   activeSectionId?: string; // ID of the section currently playing audio
   allUserProgress?: UserProgress[]; // All chapters' progress for navigation checks
   currentChapterNumber?: number; // Current chapter number
+  /** Admin/Developer/Editor: unlock all chapters for nav without quiz gating */
+  fullCourseAccess?: boolean;
 }
 
-export default function TableOfContents({ items, currentPath, activeSectionId, allUserProgress = [], currentChapterNumber }: TableOfContentsProps) {
+export default function TableOfContents({ items, currentPath, activeSectionId, allUserProgress = [], currentChapterNumber, fullCourseAccess = false }: TableOfContentsProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [expandedChapters, setExpandedChapters] = useState<Set<string>>(new Set());
   const router = useRouter();
@@ -81,6 +83,9 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
 
   // Check if a chapter is accessible (all previous chapters must have passed quizzes)
   const isChapterAccessible = (targetChapterNumber: number): boolean => {
+    if (fullCourseAccess) {
+      return true;
+    }
     if (!targetChapterNumber || targetChapterNumber <= 1) {
       return true; // Chapter 1 and introduction are always accessible
     }
@@ -214,7 +219,7 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
                   {item.isChapter && hasChildren && (
                     <div
                       className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                        isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                        isExpanded ? 'max-h-[10000px] opacity-100' : 'max-h-0 opacity-0'
                       }`}
                     >
                       <div className="pl-4 space-y-0.5">
@@ -274,21 +279,21 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
             className="fixed inset-0 bg-black/50 z-40 md:hidden"
             onClick={() => setIsOpen(false)}
           />
-          <aside className="fixed left-0 top-16 h-[calc(100vh-4rem)] w-64 bg-[#0a1a2e] border-r border-blue-500/30 z-40 overflow-y-auto md:hidden animate-slide-up">
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-bold text-white">Course Navigation</h2>
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="text-gray-300 hover:text-white"
-                  aria-label="Close menu"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              <nav className="space-y-2">
+          <aside className="fixed left-0 top-16 h-[calc(100dvh-4rem)] max-h-[calc(100dvh-4rem)] w-64 bg-[#0a1a2e] border-r border-blue-500/30 z-40 flex flex-col min-h-0 overflow-hidden md:hidden animate-slide-up">
+            <div className="shrink-0 flex items-center justify-between p-4 pb-3 border-b border-blue-500/20">
+              <h2 className="text-lg font-bold text-white">Course Navigation</h2>
+              <button
+                onClick={() => setIsOpen(false)}
+                className="text-gray-300 hover:text-white"
+                aria-label="Close menu"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-4 py-3">
+              <nav className="space-y-2 pb-4">
                 {items.map((item) => {
                   const isExpanded = item.isChapter && expandedChapters.has(item.id);
                   const hasChildren = item.children && item.children.length > 0;
@@ -337,7 +342,7 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
                       {item.isChapter && hasChildren && (
                         <div
                           className={`overflow-hidden transition-all duration-300 ease-in-out ${
-                            isExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+                            isExpanded ? 'max-h-[10000px] opacity-100' : 'max-h-0 opacity-0'
                           }`}
                         >
                           <div className="pl-6 space-y-1">
@@ -383,7 +388,6 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
                   );
                 })}
               </nav>
-              
             </div>
           </aside>
         </>
