@@ -196,20 +196,21 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
                     }`}
                     title={isLocked ? "Complete previous chapters' quizzes to unlock" : undefined}
                   >
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-start gap-2">
                       {item.isChapter && hasChildren && (
                         <svg
-                          className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`}
+                          className={`shrink-0 size-4 mt-0.5 text-current transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"
+                          aria-hidden="true"
                         >
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
                       )}
-                      {!item.isChapter && hasChildren && <span className="w-4" />}
-                      {isLocked && <span className="text-xs">🔒</span>}
-                      <span className={`${item.isChapter ? 'text-sm font-semibold' : 'text-xs'} leading-relaxed`}>
+                      {!item.isChapter && hasChildren && <span className="size-4 shrink-0" aria-hidden="true" />}
+                      {isLocked && <span className="shrink-0 text-xs">🔒</span>}
+                      <span className={`min-w-0 flex-1 ${item.isChapter ? 'text-sm font-semibold' : 'text-xs'} leading-relaxed`}>
                         {item.title}
                       </span>
                     </div>
@@ -319,20 +320,21 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
                         }`}
                         title={isLocked ? "Complete previous chapters' quizzes to unlock" : undefined}
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-start gap-2">
                           {item.isChapter && hasChildren && (
                             <svg
-                              className={`w-4 h-4 transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`}
+                              className={`shrink-0 size-4 mt-0.5 text-current transition-transform duration-300 ${isExpanded ? 'rotate-90' : ''}`}
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
+                              aria-hidden="true"
                             >
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                             </svg>
                           )}
-                          {!item.isChapter && hasChildren && <span className="w-4" />}
-                          {isLocked && <span className="text-xs">🔒</span>}
-                          <span className={item.isChapter ? 'text-sm font-semibold' : 'text-sm'}>
+                          {!item.isChapter && hasChildren && <span className="size-4 shrink-0" aria-hidden="true" />}
+                          {isLocked && <span className="shrink-0 text-xs">🔒</span>}
+                          <span className={`min-w-0 flex-1 ${item.isChapter ? 'text-sm font-semibold' : 'text-sm'} leading-relaxed`}>
                             {item.title}
                           </span>
                         </div>
