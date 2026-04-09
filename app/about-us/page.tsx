@@ -5,11 +5,14 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Header from "@/components/Header";
 import StarsBackground from "@/components/StarsBackground";
+import AudioPlayer from "@/components/AudioPlayer";
 
 export default function AboutUsPage() {
   const router = useRouter();
   const [title, setTitle] = useState("About Us");
   const [content, setContent] = useState("");
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [timestampsUrl, setTimestampsUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -18,6 +21,8 @@ export default function AboutUsPage() {
       .then((data) => {
         if (data?.title) setTitle(data.title);
         if (data?.content) setContent(data.content);
+        setAudioUrl(data?.audioUrl || null);
+        setTimestampsUrl(data?.timestampsUrl || null);
       })
       .catch(() => {})
       .finally(() => setLoading(false));
@@ -51,19 +56,30 @@ export default function AboutUsPage() {
                   <h1 className="text-3xl md:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 mb-6">
                     {title}
                   </h1>
-                  <div
-                    className="prose prose-invert prose-lg max-w-none text-gray-300 leading-relaxed
-                      prose-headings:text-white prose-p:my-4 prose-ul:my-4 prose-li:my-1
-                      prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline
-                      prose-strong:text-white"
-                    dangerouslySetInnerHTML={{ __html: content || "<p>No content yet.</p>" }}
-                  />
+                  {audioUrl ? (
+                    <div className="mt-2">
+                      <AudioPlayer
+                        text={content || ""}
+                        audioUrl={audioUrl}
+                        timestampsUrl={timestampsUrl || undefined}
+                        autoPlay={false}
+                      />
+                    </div>
+                  ) : (
+                    <div
+                      className="prose prose-invert prose-lg max-w-none text-gray-300 leading-relaxed
+                        prose-headings:text-white prose-p:my-4 prose-ul:my-4 prose-li:my-1
+                        prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline
+                        prose-strong:text-white"
+                      dangerouslySetInnerHTML={{ __html: content || "<p>No content yet.</p>" }}
+                    />
+                  )}
                   <div className="mt-8 pt-6 border-t border-cyan-500/20">
                     <Link
                       href="https://63hours.com/introduction"
                       className="inline-flex items-center px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold transition-all"
                     >
-                      See How It Works
+                      Start Free Course
                     </Link>
                   </div>
                 </>

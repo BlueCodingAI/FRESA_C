@@ -3,6 +3,41 @@ import { prisma } from '@/lib/prisma'
 
 const ALLOWED_KEYS = ['about_us', 'pricing'] as const
 
+type CmsMeta = {
+  audioUrl?: string | null
+  timestampsUrl?: string | null
+}
+
+const META_PREFIX = '<!--CMS_META:'
+const META_SUFFIX = '-->'
+
+function parseCmsContent(raw: string): { content: string; meta: CmsMeta } {
+  if (!raw || !raw.startsWith(META_PREFIX)) {
+    return { content: raw || '', meta: {} }
+  }
+  const endIndex = raw.indexOf(META_SUFFIX)
+  if (endIndex === -1) {
+    return { content: raw, meta: {} }
+  }
+
+  const encodedMeta = raw.slice(META_PREFIX.length, endIndex).trim()
+  const remaining = raw.slice(endIndex + META_SUFFIX.length).replace(/^\s*\n/, '')
+
+  try {
+    const decoded = decodeURIComponent(encodedMeta)
+    const parsed = JSON.parse(decoded)
+    return {
+      content: remaining,
+      meta: {
+        audioUrl: typeof parsed?.audioUrl === 'string' ? parsed.audioUrl : null,
+        timestampsUrl: typeof parsed?.timestampsUrl === 'string' ? parsed.timestampsUrl : null,
+      },
+    }
+  } catch {
+    return { content: remaining, meta: {} }
+  }
+}
+
 const DEFAULT_CONTENT: Record<string, { title: string; content: string }> = {
   about_us: {
     title: 'About Us',
@@ -29,9 +64,12 @@ export async function GET(
     if (cmsPage) {
       const page = await cmsPage.findUnique({ where: { key } })
       if (page) {
+        const parsed = parseCmsContent(page.content || '')
         return NextResponse.json({
           title: page.title,
-          content: page.content,
+          content: parsed.content,
+          audioUrl: parsed.meta.audioUrl || null,
+          timestampsUrl: parsed.meta.timestampsUrl || null,
         })
       }
     }
@@ -43,5 +81,7 @@ export async function GET(
   return NextResponse.json({
     title: def.title,
     content: def.content,
+    audioUrl: null,
+    timestampsUrl: null,
   })
 }

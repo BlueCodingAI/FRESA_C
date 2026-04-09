@@ -10,8 +10,11 @@ export default function AdminPricingPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [generatingAudio, setGeneratingAudio] = useState(false);
   const [title, setTitle] = useState("Pricing");
   const [content, setContent] = useState("");
+  const [audioUrl, setAudioUrl] = useState("");
+  const [timestampsUrl, setTimestampsUrl] = useState("");
 
   const getToken = () =>
     document.cookie
@@ -42,6 +45,8 @@ export default function AdminPricingPage() {
         const data = await res.json();
         setTitle(data.title || "Pricing");
         setContent(data.content || "");
+        setAudioUrl(data.audioUrl || "");
+        setTimestampsUrl(data.timestampsUrl || "");
       }
     } catch (e) {
       console.error(e);
@@ -61,7 +66,12 @@ export default function AdminPricingPage() {
           Authorization: `Bearer ${token}`,
         },
         credentials: "include",
-        body: JSON.stringify({ title: title.trim(), content }),
+        body: JSON.stringify({
+          title: title.trim(),
+          content,
+          audioUrl: audioUrl.trim() || null,
+          timestampsUrl: timestampsUrl.trim() || null,
+        }),
       });
       if (res.ok) {
         alert("Pricing page saved successfully!");
@@ -74,6 +84,85 @@ export default function AdminPricingPage() {
       alert("Failed to save");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const getPlainText = (html: string) => {
+    if (!html) return "";
+    if (typeof window === "undefined") return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+    const div = document.createElement("div");
+    div.innerHTML = html;
+    return (div.textContent || div.innerText || "").replace(/\s+/g, " ").trim();
+  };
+
+  const handleGenerateAudio = async () => {
+    const textToSpeak = getPlainText(content);
+    if (!textToSpeak) {
+      alert("Please add content before generating audio.");
+      return;
+    }
+
+    setGeneratingAudio(true);
+    try {
+      const token = getToken();
+      if (!token) {
+        router.push("/login");
+        return;
+      }
+
+      const res = await fetch("/api/admin/generate-audio", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          text: textToSpeak,
+          type: "cms_page",
+          context: "section",
+        }),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        alert(data.error || "Failed to generate audio.");
+        return;
+      }
+
+      const newAudioUrl = data.audioUrl || "";
+      const newTimestampsUrl = data.timestampsUrl || "";
+      setAudioUrl(newAudioUrl);
+      setTimestampsUrl(newTimestampsUrl);
+
+      // Auto-save generated URLs so public page gets player immediately.
+      const saveRes = await fetch("/api/admin/pages/pricing", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          title: title.trim(),
+          content,
+          audioUrl: newAudioUrl || null,
+          timestampsUrl: newTimestampsUrl || null,
+        }),
+      });
+
+      if (!saveRes.ok) {
+        const saveErr = await saveRes.json().catch(() => ({}));
+        alert(saveErr.error || "Audio generated, but auto-save failed. Please click Save.");
+        return;
+      }
+
+      alert("Audio and timestamps generated and saved.");
+    } catch (e) {
+      console.error(e);
+      alert("Failed to generate audio");
+    } finally {
+      setGeneratingAudio(false);
     }
   };
 
@@ -113,6 +202,13 @@ export default function AdminPricingPage() {
               View page
             </Link>
             <button
+              onClick={handleGenerateAudio}
+              disabled={generatingAudio}
+              className="px-4 py-2 rounded-lg border border-purple-500/40 text-purple-300 hover:bg-purple-500/10 text-sm disabled:opacity-50"
+            >
+              {generatingAudio ? "Generating..." : "Generate Audio"}
+            </button>
+            <button
               onClick={handleSave}
               disabled={saving}
               className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold text-sm disabled:opacity-50"
@@ -139,6 +235,28 @@ export default function AdminPricingPage() {
             rows={14}
             className="min-h-[320px]"
           />
+          <div className="mt-6 grid gap-4 md:grid-cols-2">
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Audio URL</label>
+              <input
+                type="text"
+                value={audioUrl}
+                onChange={(e) => setAudioUrl(e.target.value)}
+                className="w-full px-4 py-3 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                placeholder="/audio/....mp3"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-300 mb-2">Timestamps URL</label>
+              <input
+                type="text"
+                value={timestampsUrl}
+                onChange={(e) => setTimestampsUrl(e.target.value)}
+                className="w-full px-4 py-3 bg-[#0a0e27]/50 border border-cyan-500/30 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                placeholder="/timestamps/....json"
+              />
+            </div>
+          </div>
         </div>
       </div>
     </div>

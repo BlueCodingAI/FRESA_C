@@ -224,7 +224,7 @@ export default function IntroductionPage() {
           onClick={handleContinue}
           className="bg-[#3b82f6] hover:bg-[#2563eb] text-white font-semibold py-4 px-12 rounded-xl text-lg transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg hover:shadow-xl animate-pulse-glow"
         >
-          Let&apos;s Go!
+          Start Free Course
         </button>
       </div>
     </main>

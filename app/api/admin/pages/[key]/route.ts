@@ -8,6 +8,58 @@ function isValidKey(key: string): key is (typeof ALLOWED_KEYS)[number] {
   return ALLOWED_KEYS.includes(key as (typeof ALLOWED_KEYS)[number])
 }
 
+type CmsMeta = {
+  audioUrl?: string | null
+  timestampsUrl?: string | null
+}
+
+const META_PREFIX = '<!--CMS_META:'
+const META_SUFFIX = '-->'
+
+function parseCmsContent(raw: string): { content: string; meta: CmsMeta } {
+  if (!raw || !raw.startsWith(META_PREFIX)) {
+    return { content: raw || '', meta: {} }
+  }
+  const endIndex = raw.indexOf(META_SUFFIX)
+  if (endIndex === -1) {
+    return { content: raw, meta: {} }
+  }
+
+  const encodedMeta = raw.slice(META_PREFIX.length, endIndex).trim()
+  const remaining = raw.slice(endIndex + META_SUFFIX.length).replace(/^\s*\n/, '')
+
+  try {
+    const decoded = decodeURIComponent(encodedMeta)
+    const parsed = JSON.parse(decoded)
+    return {
+      content: remaining,
+      meta: {
+        audioUrl: typeof parsed?.audioUrl === 'string' ? parsed.audioUrl : null,
+        timestampsUrl: typeof parsed?.timestampsUrl === 'string' ? parsed.timestampsUrl : null,
+      },
+    }
+  } catch {
+    return { content: remaining, meta: {} }
+  }
+}
+
+function buildStoredContent(content: string, meta: CmsMeta): string {
+  const audioUrl = typeof meta.audioUrl === 'string' && meta.audioUrl.trim() ? meta.audioUrl.trim() : null
+  const timestampsUrl = typeof meta.timestampsUrl === 'string' && meta.timestampsUrl.trim() ? meta.timestampsUrl.trim() : null
+
+  if (!audioUrl && !timestampsUrl) {
+    return content
+  }
+
+  const encoded = encodeURIComponent(
+    JSON.stringify({
+      ...(audioUrl ? { audioUrl } : {}),
+      ...(timestampsUrl ? { timestampsUrl } : {}),
+    })
+  )
+  return `${META_PREFIX}${encoded}${META_SUFFIX}\n${content}`
+}
+
 // GET - Admin: fetch CMS page for editing
 export async function GET(
   request: NextRequest,
@@ -37,10 +89,13 @@ export async function GET(
     })
 
     if (page) {
+      const parsed = parseCmsContent(page.content || '')
       return NextResponse.json({
         key: page.key,
         title: page.title,
-        content: page.content,
+        content: parsed.content,
+        audioUrl: parsed.meta.audioUrl || null,
+        timestampsUrl: parsed.meta.timestampsUrl || null,
         updatedAt: page.updatedAt,
       })
     }
@@ -62,6 +117,8 @@ export async function GET(
       key,
       title: def.title,
       content: def.content,
+      audioUrl: null,
+      timestampsUrl: null,
       updatedAt: null,
     })
   } catch (error) {
@@ -98,7 +155,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { title, content } = body
+    const { title, content, audioUrl, timestampsUrl } = body
 
     if (typeof title !== 'string' || title.trim() === '') {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 })
@@ -106,6 +163,19 @@ export async function PUT(
     if (typeof content !== 'string') {
       return NextResponse.json({ error: 'Content is required' }, { status: 400 })
     }
+
+    if (audioUrl !== undefined && audioUrl !== null && typeof audioUrl !== 'string') {
+      return NextResponse.json({ error: 'audioUrl must be a string' }, { status: 400 })
+    }
+    if (timestampsUrl !== undefined && timestampsUrl !== null && typeof timestampsUrl !== 'string') {
+      return NextResponse.json({ error: 'timestampsUrl must be a string' }, { status: 400 })
+    }
+
+    const normalizedContent = content.trim() || ''
+    const storedContent = buildStoredContent(normalizedContent, {
+      audioUrl: typeof audioUrl === 'string' ? audioUrl : null,
+      timestampsUrl: typeof timestampsUrl === 'string' ? timestampsUrl : null,
+    })
 
     // Use CmsPage model (requires prisma generate after adding CmsPage to schema)
     const cmsPage = (prisma as any).cmsPage
@@ -122,18 +192,22 @@ export async function PUT(
       create: {
         key,
         title: title.trim(),
-        content: content.trim() || '',
+        content: storedContent,
       },
       update: {
         title: title.trim(),
-        content: content.trim() || '',
+        content: storedContent,
       },
     })
+
+    const parsed = parseCmsContent(page.content || '')
 
     return NextResponse.json({
       key: page.key,
       title: page.title,
-      content: page.content,
+      content: parsed.content,
+      audioUrl: parsed.meta.audioUrl || null,
+      timestampsUrl: parsed.meta.timestampsUrl || null,
       updatedAt: page.updatedAt,
     })
   } catch (error) {
