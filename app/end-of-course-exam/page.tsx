@@ -37,6 +37,8 @@ export default function EndOfCourseExamPage() {
       const token = getToken();
       if (!token) {
         router.push("/login");
+        setCheckingCompletion(false);
+        setLoading(false);
         return;
       }
 
@@ -53,35 +55,42 @@ export default function EndOfCourseExamPage() {
         
         if (data.allCompleted) {
           setAllChaptersCompleted(true);
-          const lockRes = await fetch("/api/exam/eoc-lockout", {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          if (lockRes.ok) {
-            const lockData = await lockRes.json();
-            if (lockData.locked) {
-              setEocLocked(true);
-              setDaysRemaining(lockData.daysRemaining ?? 0);
-              setNextEligibleDate(lockData.nextEligibleDate ?? null);
-              setCheckingCompletion(false);
-              setLoading(false);
-              return;
+          try {
+            const lockRes = await fetch("/api/exam/eoc-lockout", {
+              headers: { Authorization: `Bearer ${token}` },
+            });
+            if (lockRes.ok) {
+              const lockData = await lockRes.json();
+              if (lockData.locked) {
+                setEocLocked(true);
+                setDaysRemaining(lockData.daysRemaining ?? 0);
+                setNextEligibleDate(lockData.nextEligibleDate ?? null);
+                setCheckingCompletion(false);
+                setLoading(false);
+                return;
+              }
             }
+          } catch (lockErr) {
+            console.error("[End-of-Course Exam] Lockout check failed, continuing to exam:", lockErr);
           }
           setCheckingCompletion(false);
           await fetchQuestions();
         } else {
           console.log("[End-of-Course Exam] Not all chapters completed");
           setCheckingCompletion(false);
+          setLoading(false);
         }
       } else {
         // Response not ok
         const errorData = await response.json().catch(() => ({}));
         console.error("[End-of-Course Exam] Failed to check completion:", response.status, errorData);
         setCheckingCompletion(false);
+        setLoading(false);
       }
     } catch (err) {
       console.error("Error checking completion:", err);
       setCheckingCompletion(false);
+      setLoading(false);
     }
   };
 
