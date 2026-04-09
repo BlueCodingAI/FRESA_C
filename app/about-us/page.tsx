@@ -33,7 +33,7 @@ export default function AboutUsPage() {
       <Header />
       <StarsBackground />
 
-      <div className="relative z-10 flex items-center justify-center min-h-screen px-4 py-6 pt-20 md:pt-6">
+      <div className="relative z-10 flex items-center justify-center min-h-screen px-4 py-6 pt-24 md:pt-14">
         <div className="w-full max-w-3xl">
           <div className="bg-[#1a1f3a]/90 backdrop-blur-lg rounded-2xl shadow-2xl border border-cyan-500/20 overflow-hidden animate-fade-in">
             <div className="p-6 md:p-10">
