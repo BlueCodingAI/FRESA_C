@@ -18,6 +18,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
+    // Staff users should always be allowed to access exam flows for QA/admin operations.
+    if (decoded.role === 'Admin' || decoded.role === 'Developer' || decoded.role === 'Editor') {
+      return NextResponse.json({
+        allCompleted: true,
+        totalChapters: 0,
+        completedChapters: 0,
+      })
+    }
+
     // Get all chapters
     const chapters = await prisma.chapter.findMany({
       orderBy: { number: 'asc' },

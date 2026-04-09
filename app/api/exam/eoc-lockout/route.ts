@@ -20,6 +20,15 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
+    // Staff users are exempt from student 30-day lockout during admin/testing workflows.
+    if (decoded.role === 'Admin' || decoded.role === 'Developer' || decoded.role === 'Editor') {
+      return NextResponse.json({
+        locked: false,
+        daysRemaining: 0,
+        nextEligibleDate: null,
+      })
+    }
+
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       select: { endOfCourseFailedAt: true, endOfCoursePassedAt: true },
