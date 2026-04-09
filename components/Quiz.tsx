@@ -584,8 +584,8 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
   // Show results screen if quiz is complete
   if (showResults) {
     const percentage = shuffledQuestions.length > 0 ? Math.round((finalScore / shuffledQuestions.length) * 100) : 0;
-    // End-of-Course Exam uses 75% passing score, others use 80%
-    const passingScore = disableRetry ? 75 : 80;
+    // All quizzes/exams use 75% passing score.
+    const passingScore = 75;
     const passed = percentage >= passingScore;
     // Check if this is End-of-Course Exam (disableRetry = true and no chapterNumber)
     const isEndOfCourseExam = disableRetry && !chapterNumber;
@@ -760,14 +760,14 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                           <>
                             <br className="hidden md:block" />
                             {/* Chapter Quiz: Simple message - no practice exam references */}
-                            You need a score of at least 80% to proceed.
+                            You need a score of at least 75% to proceed.
                           </>
                         )}
                         {!disableRetry && onContinue && (
                           <>
                             <br className="hidden md:block" />
                             {/* Practice Exam: Show warning about 30-day wait */}
-                            Because you got less than 80%, we strongly recommend doing another practice exam. If you fail the actual exam, you will have to wait 30 days until you can take it again (this is state law).
+                            Because you got less than 75%, we strongly recommend doing another practice exam. If you fail the actual exam, you will have to wait 30 days until you can take it again (this is state law).
                           </>
                         )}
                         {disableRetry && (

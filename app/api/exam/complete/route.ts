@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
     const percentage = total > 0 ? Math.round((score / total) * 100) : 0
-    const passed = percentage >= 70 // End-of-Course Exam passing score is 70%
+    const passed = percentage >= 75 // End-of-Course Exam passing score is 75%
     const siteUrl = process.env.SITE_URL || 'https://63hours.com'
 
     if (examType === 'end-of-course' && passed) {

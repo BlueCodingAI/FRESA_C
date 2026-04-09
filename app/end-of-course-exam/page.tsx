@@ -160,7 +160,7 @@ export default function EndOfCourseExamPage() {
     if (!token) return;
 
     const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
-    const passed = percentage >= 70; // End-of-Course Exam passing score is 70%
+    const passed = percentage >= 75; // End-of-Course Exam passing score is 75%
 
     try {
       await fetch("/api/exam/complete", {

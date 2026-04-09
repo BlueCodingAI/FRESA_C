@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
 
     const percentage = total > 0 ? Math.round((score / total) * 100) : 0
-    const passed = percentage >= 80 // Chapter quiz pass threshold
+    const passed = percentage >= 75 // Chapter quiz pass threshold
 
     // Only send email when student passes the quiz
     const notifyTo = process.env.ADMIN_NOTIFY_EMAIL

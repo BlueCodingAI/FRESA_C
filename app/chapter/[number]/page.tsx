@@ -144,9 +144,9 @@ export default function ChapterPage() {
                 !fullCourseAccessRef.current &&
                 (!userProgressRef.current ||
                   !userProgressRef.current.quizCompleted ||
-                  userProgressRef.current.quizScore < (userProgressRef.current.quizTotal * 0.8))
+                  userProgressRef.current.quizScore < (userProgressRef.current.quizTotal * 0.75))
               ) {
-                alert("You must pass this chapter's quiz with at least 80% before proceeding to the next chapter.");
+                alert("You must pass this chapter's quiz with at least 75% before proceeding to the next chapter.");
                 return;
               }
             } else {
@@ -239,9 +239,9 @@ export default function ChapterPage() {
       // Check if all previous chapters are completed
       for (let chNum = 1; chNum < chapterNumber; chNum++) {
         const progress = progressToCheck.find((p: any) => p.chapterNumber === chNum);
-        if (!progress || !progress.quizCompleted || progress.quizScore < (progress.quizTotal * 0.8)) {
+        if (!progress || !progress.quizCompleted || progress.quizScore < (progress.quizTotal * 0.75)) {
           // Previous chapter not completed - redirect to that chapter
-          alert(`You must complete and pass Chapter ${chNum}'s quiz with at least 80% before accessing Chapter ${chapterNumber}.`);
+          alert(`You must complete and pass Chapter ${chNum}'s quiz with at least 75% before accessing Chapter ${chapterNumber}.`);
           router.push(`/chapter/${chNum}`);
           setAccessChecked(true);
           return;
@@ -619,7 +619,7 @@ export default function ChapterPage() {
     if (!chapterNumber) return;
     
     const percentage = total > 0 ? Math.round((score / total) * 100) : 0;
-    const passed = percentage >= 80;
+    const passed = percentage >= 75;
     
     const token = document.cookie
       .split("; ")
@@ -668,7 +668,7 @@ export default function ChapterPage() {
     }
     
     if (passed) {
-      // Quiz passed (>= 80%) - send notification
+      // Quiz passed (>= 75%) - send notification
       fetch("/api/quiz/complete", {
         method: "POST",
         headers: {
@@ -690,7 +690,7 @@ export default function ChapterPage() {
       // Quiz component will show results screen with "Continue to Next Chapter" button
       // which will call handleContinueToNextChapter when clicked
     } else {
-      // Quiz failed (< 80%) - MUST retake, cannot proceed
+      // Quiz failed (< 75%) - MUST retake, cannot proceed
       // Quiz component will show retry message with only "Take the quiz again" button
       setQuizScore({ score, total });
       setShowRetryMessage(false);
@@ -731,7 +731,7 @@ export default function ChapterPage() {
   }, [showQuiz, quizShuffle, quizRetryKey]);
   
   const handleContinueToNextChapter = async () => {
-    // User passed (>= 80%) and wants to continue to next chapter
+    // User passed (>= 75%) and wants to continue to next chapter
     setShowRetryMessage(false);
     const nextChapter = chapterNumber! + 1;
     // Get max chapter number (excluding chapter 0 which is introduction)

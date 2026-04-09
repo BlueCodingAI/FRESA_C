@@ -101,7 +101,7 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
     // Check if all previous chapters (1 to targetChapterNumber - 1) have passed quizzes
     for (let chNum = 1; chNum < targetChapterNumber; chNum++) {
       const progress = allUserProgress.find((p: UserProgress) => p.chapterNumber === chNum);
-      if (!progress || !progress.quizCompleted || progress.quizScore < (progress.quizTotal * 0.8)) {
+      if (!progress || !progress.quizCompleted || progress.quizScore < (progress.quizTotal * 0.75)) {
         return false; // Previous chapter not passed
       }
     }
@@ -121,12 +121,12 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
         let blockingChapter = 1;
         for (let chNum = 1; chNum < targetChapterNumber; chNum++) {
           const progress = allUserProgress.find((p: UserProgress) => p.chapterNumber === chNum);
-          if (!progress || !progress.quizCompleted || progress.quizScore < (progress.quizTotal * 0.8)) {
+          if (!progress || !progress.quizCompleted || progress.quizScore < (progress.quizTotal * 0.75)) {
             blockingChapter = chNum;
             break;
           }
         }
-        alert(`You must complete and pass Chapter ${blockingChapter}'s quiz with at least 80% before accessing this section.`);
+        alert(`You must complete and pass Chapter ${blockingChapter}'s quiz with at least 75% before accessing this section.`);
         return;
       }
       

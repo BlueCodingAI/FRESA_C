@@ -119,7 +119,7 @@ model UserProgress {
   chapterNumber Int
   sectionId     String?  // Current section ID where user stopped
   sectionNumber Int?     // Current section number
-  quizCompleted Boolean  @default(false) // Whether chapter quiz is completed with 80%+
+  quizCompleted Boolean  @default(false) // Whether chapter quiz is completed with 75%+
   quizScore     Int?     // Last quiz score
   quizTotal     Int?     // Last quiz total
   lastAccessed  DateTime @default(now())

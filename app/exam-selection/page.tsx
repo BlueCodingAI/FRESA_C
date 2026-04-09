@@ -91,7 +91,7 @@ export default function ExamSelectionPage() {
                   </div>
                   <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">End-of-Course Exam</h2>
                   <p className="text-gray-300 text-sm md:text-base mb-6 leading-relaxed">
-                    Take the official End-of-Course Exam. Passing score is 70%. If you fail, you must wait 30 days before retaking.
+                    Take the official End-of-Course Exam. Passing score is 75%. If you fail, you must wait 30 days before retaking.
                   </p>
                   <button
                     onClick={handleGoToEndOfCourseExam}
