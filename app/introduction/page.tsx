@@ -170,9 +170,33 @@ export default function IntroductionPage() {
         children: [...chapterSections, quizChild],
       });
     });
+
+    const hasPassedChapter20 =
+      fullCourseAccess ||
+      allUserProgress.some(
+        (p: any) =>
+          p.chapterNumber === 20 &&
+          p.quizCompleted &&
+          p.quizScore >= (p.quizTotal * 0.75)
+      );
+
+    if (hasPassedChapter20) {
+      items.push(
+        {
+          id: "practice-eoc-exam",
+          title: "Practice End-Of-Course Exam",
+          path: "/practice-exam",
+        },
+        {
+          id: "end-of-course-exam",
+          title: "End-Of-Course Exam",
+          path: "/end-of-course-exam",
+        }
+      );
+    }
     
     return items;
-  }, [allChapters]);
+  }, [allChapters, allUserProgress, fullCourseAccess]);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-[#0a1a2e] via-[#1e3a5f] to-[#0a1a2e] relative overflow-hidden">
