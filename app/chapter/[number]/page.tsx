@@ -45,6 +45,7 @@ export default function ChapterPage() {
   const [loading, setLoading] = useState(true);
   const [chapterData, setChapterData] = useState<Chapter | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
+  const [currentSectionData, setCurrentSectionData] = useState<Section | null>(null);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [searchHighlight, setSearchHighlight] = useState<string>("");
   const [showRegistrationPrompt, setShowRegistrationPrompt] = useState(false);
@@ -161,7 +162,7 @@ export default function ChapterPage() {
       window.removeEventListener("navigateToSection", handleNavigateToSection as EventListener);
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [chapterNumber, router, fullCourseAccess, userProgress]);
+  }, [chapterNumber, router, fullCourseAccess]);
 
   // Check chapter access when progress is loaded
   useEffect(() => {
@@ -262,6 +263,14 @@ export default function ChapterPage() {
     } catch (_) {}
   }, [chapterNumber, currentSection, sections]);
 
+  useEffect(() => {
+    if (!currentSection) {
+      setCurrentSectionData(null);
+      return;
+    }
+    fetchCurrentSectionData(currentSection);
+  }, [currentSection]);
+
   const fetchAllChapters = async () => {
     try {
       const response = await fetch("/api/chapters", { cache: "no-store" });
@@ -278,6 +287,7 @@ export default function ChapterPage() {
     if (!chapterNumber) return;
     
     try {
+      setCurrentSectionData(null);
       const response = await fetch(`/api/chapters/${chapterNumber}`, { cache: "no-store" });
       if (response.ok) {
         const data = await response.json();
@@ -291,10 +301,7 @@ export default function ChapterPage() {
               dbSections.push({
                 id: section.id,
                 title: section.title,
-                text: section.text,
                 type: section.type || 'content',
-                audioUrl: section.audioUrl,
-                timestampsUrl: section.timestampsUrl,
                 imageUrl: section.imageUrl || null,
               });
               
@@ -420,6 +427,21 @@ export default function ChapterPage() {
       console.error("Error fetching chapter data:", err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchCurrentSectionData = async (sectionId: string) => {
+    try {
+      const response = await fetch(`/api/sections/${sectionId}`, { cache: "no-store" });
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentSectionData(data.section || null);
+      } else {
+        setCurrentSectionData(null);
+      }
+    } catch (err) {
+      console.error("Error fetching current section data:", err);
+      setCurrentSectionData(null);
     }
   };
 
@@ -769,7 +791,7 @@ export default function ChapterPage() {
     router.push("/exam-selection");
   };
 
-  const currentSectionData = sections.find(s => s.id === currentSection);
+  const currentSectionMeta = sections.find(s => s.id === currentSection);
   const currentIndex = sections.findIndex(s => s.id === currentSection);
 
   const handleAudioComplete = () => {
@@ -1013,18 +1035,18 @@ export default function ChapterPage() {
               {/* Header - Fixed */}
               <div className="px-6 md:px-8 pt-6 md:pt-8 pb-6 md:pb-8 border-b border-blue-500/20 flex-shrink-0">
                 <h2 className="text-xl md:text-2xl font-bold text-white break-words">
-                  {currentSectionData?.title}
+                  {currentSectionData?.title || currentSectionMeta?.title}
                 </h2>
               </div>
               
               {/* Section Image - Keep natural aspect ratio, centered in section */}
-              {currentSectionData?.imageUrl && (
+              {(currentSectionData?.imageUrl || currentSectionMeta?.imageUrl) && (
                 <div className="px-6 md:px-8 pb-2 md:pb-3">
                   <div className="relative w-full group rounded-xl border border-cyan-500/25 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 backdrop-blur-sm p-3 md:p-4">
                     <div className="w-full flex justify-center">
                       <img
-                        src={currentSectionData.imageUrl}
-                        alt={currentSectionData.title || "Section image"}
+                        src={currentSectionData?.imageUrl || currentSectionMeta?.imageUrl || ""}
+                        alt={currentSectionData?.title || currentSectionMeta?.title || "Section image"}
                         className="w-auto h-auto max-w-full max-h-[420px] object-contain transition-transform duration-500 group-hover:scale-[1.01]"
                         loading="lazy"
                         onError={(e) => {
@@ -1069,7 +1091,7 @@ export default function ChapterPage() {
                     ⚠️ Audio not available for this section yet. Please generate audio in the admin panel.
                   </div>
                 )}
-                {!currentSectionData && !loading && (
+                {!currentSectionMeta && !loading && (
                   <div className="text-yellow-400 text-sm mt-4">
                     ⚠️ No sections available for this chapter yet. Please add sections in the admin panel.
                   </div>
