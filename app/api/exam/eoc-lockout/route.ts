@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
-
-const LOCKOUT_DAYS = 30
+import { getEocLockoutPayload } from '@/lib/eoc-lockout'
 
 // GET - Check if current user is in 30-day lockout after failing End-of-Course exam
 export async function GET(request: NextRequest) {
@@ -20,15 +19,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
     }
 
-    // Staff users are exempt from student 30-day lockout during admin/testing workflows.
-    if (decoded.role === 'Admin' || decoded.role === 'Developer' || decoded.role === 'Editor') {
-      return NextResponse.json({
-        locked: false,
-        daysRemaining: 0,
-        nextEligibleDate: null,
-      })
-    }
-
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
       select: { endOfCourseFailedAt: true, endOfCoursePassedAt: true },
@@ -38,48 +28,13 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 })
     }
 
-    if (user.endOfCoursePassedAt) {
-      return NextResponse.json({
-        locked: false,
-        daysRemaining: 0,
-        nextEligibleDate: null,
-      })
-    }
+    const payload = getEocLockoutPayload(
+      decoded.role,
+      user.endOfCourseFailedAt,
+      user.endOfCoursePassedAt
+    )
 
-    const failedAt = user.endOfCourseFailedAt
-    if (!failedAt) {
-      return NextResponse.json({
-        locked: false,
-        daysRemaining: 0,
-        nextEligibleDate: null,
-      })
-    }
-
-    const nextEligible = new Date(failedAt)
-    nextEligible.setDate(nextEligible.getDate() + LOCKOUT_DAYS)
-    const now = new Date()
-    if (now >= nextEligible) {
-      return NextResponse.json({
-        locked: false,
-        daysRemaining: 0,
-        nextEligibleDate: null,
-      })
-    }
-
-    const msRemaining = nextEligible.getTime() - now.getTime()
-    const daysRemaining = Math.ceil(msRemaining / (24 * 60 * 60 * 1000))
-    const nextEligibleDate = nextEligible.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      timeZone: 'America/New_York',
-    })
-
-    return NextResponse.json({
-      locked: true,
-      daysRemaining,
-      nextEligibleDate,
-    })
+    return NextResponse.json(payload)
   } catch (error: any) {
     console.error('[EOC Lockout] Error:', error)
     return NextResponse.json(

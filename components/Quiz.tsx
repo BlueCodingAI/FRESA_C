@@ -91,6 +91,8 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
 
   const currentQuestion = shuffledQuestions[currentQuestionIndex];
   const isLastQuestion = currentQuestionIndex === shuffledQuestions.length - 1;
+  /** End-of-Course Exam: retry disabled and not a chapter quiz */
+  const isEndOfCourseExam = disableRetry && chapterNumber == null;
 
   // Build question text (just the question, no options)
   const questionText = currentQuestion?.question || "";
@@ -462,6 +464,11 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
       // Show results screen instead of immediately calling onComplete
       setShowResults(true);
       setCharacterAnimation("congratulations");
+      // End-of-Course: record pass/fail as soon as results are shown so the 30-day rule applies
+      // even if the student leaves without clicking a follow-up button.
+      if (isEndOfCourseExam) {
+        onComplete(score, shuffledQuestions.length);
+      }
       // Notify parent that results are being shown
       if (onShowResults) {
         onShowResults();
@@ -587,9 +594,7 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
     // All quizzes/exams use 75% passing score.
     const passingScore = 75;
     const passed = percentage >= passingScore;
-    // Check if this is End-of-Course Exam (disableRetry = true and no chapterNumber)
-    const isEndOfCourseExam = disableRetry && !chapterNumber;
-    
+
     return (
       <div className="w-full max-w-4xl mx-auto">
         {/* Results Screen - Modern Professional Design - Enhanced for End-of-Course Exam */}
@@ -840,11 +845,11 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                   <div className="flex flex-col sm:flex-row gap-3">
                     <button
                       onClick={() => {
-                        handleViewResultsComplete();
                         if (isEndOfCourseExam && passed) {
                           router.push("/certification/pay");
                           return;
                         }
+                        handleViewResultsComplete();
                         if (isLastChapter && onGoToExams) {
                           onGoToExams();
                         } else if (onContinueToNextChapter) {
@@ -964,7 +969,6 @@ export default function Quiz({ questions, onComplete, showCharacter = true, sear
                   <div className="text-center">
                     <button
                       onClick={() => {
-                        handleViewResultsComplete();
                         router.push("/practice-exam");
                       }}
                       className={`w-full ${isEndOfCourseExam ? 'px-4 py-2.5 md:px-6 md:py-3 rounded-xl text-sm md:text-base' : 'px-6 py-3 rounded-xl text-base'} bg-gradient-to-r from-blue-600 via-blue-500 to-cyan-500 hover:from-blue-500 hover:via-blue-400 hover:to-cyan-400 text-white font-bold transition-all duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-blue-500/40 hover:shadow-blue-500/60`}

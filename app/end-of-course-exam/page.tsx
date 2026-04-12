@@ -20,6 +20,7 @@ export default function EndOfCourseExamPage() {
   const [eocLocked, setEocLocked] = useState(false);
   const [daysRemaining, setDaysRemaining] = useState<number>(0);
   const [nextEligibleDate, setNextEligibleDate] = useState<string | null>(null);
+  const [lockoutVerifyError, setLockoutVerifyError] = useState(false);
 
   useEffect(() => {
     checkCompletion();
@@ -33,6 +34,7 @@ export default function EndOfCourseExamPage() {
   };
 
   const checkCompletion = async () => {
+    setLockoutVerifyError(false);
     try {
       const token = getToken();
       if (!token) {
@@ -55,23 +57,30 @@ export default function EndOfCourseExamPage() {
         
         if (data.allCompleted) {
           setAllChaptersCompleted(true);
-          try {
-            const lockRes = await fetch("/api/exam/eoc-lockout", {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            if (lockRes.ok) {
-              const lockData = await lockRes.json();
-              if (lockData.locked) {
-                setEocLocked(true);
-                setDaysRemaining(lockData.daysRemaining ?? 0);
-                setNextEligibleDate(lockData.nextEligibleDate ?? null);
-                setCheckingCompletion(false);
-                setLoading(false);
-                return;
-              }
-            }
-          } catch (lockErr) {
-            console.error("[End-of-Course Exam] Lockout check failed, continuing to exam:", lockErr);
+          const lockRes = await fetch("/api/exam/eoc-lockout", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (lockRes.status === 401) {
+            router.push("/login");
+            setCheckingCompletion(false);
+            setLoading(false);
+            return;
+          }
+          if (!lockRes.ok) {
+            console.error("[End-of-Course Exam] Lockout check failed:", lockRes.status);
+            setLockoutVerifyError(true);
+            setCheckingCompletion(false);
+            setLoading(false);
+            return;
+          }
+          const lockData = await lockRes.json();
+          if (lockData.locked) {
+            setEocLocked(true);
+            setDaysRemaining(lockData.daysRemaining ?? 0);
+            setNextEligibleDate(lockData.nextEligibleDate ?? null);
+            setCheckingCompletion(false);
+            setLoading(false);
+            return;
           }
           setCheckingCompletion(false);
           await fetchQuestions();
@@ -103,11 +112,23 @@ export default function EndOfCourseExamPage() {
         return;
       }
 
-      const response = await fetch("/api/exam/questions", {
+      const response = await fetch("/api/exam/questions?for=end-of-course", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
+
+      if (response.status === 403) {
+        const errBody = await response.json().catch(() => ({}));
+        if (errBody.locked || errBody.error === "eoc_locked") {
+          setEocLocked(true);
+          setDaysRemaining(errBody.daysRemaining ?? 0);
+          setNextEligibleDate(errBody.nextEligibleDate ?? null);
+          setLoading(false);
+          setCheckingCompletion(false);
+          return;
+        }
+      }
 
       if (response.ok) {
         const data = await response.json();
@@ -163,7 +184,7 @@ export default function EndOfCourseExamPage() {
     const passed = percentage >= 75; // End-of-Course Exam passing score is 75%
 
     try {
-      await fetch("/api/exam/complete", {
+      const res = await fetch("/api/exam/complete", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -175,6 +196,21 @@ export default function EndOfCourseExamPage() {
           examType: "end-of-course",
         }),
       });
+      if (res.status === 403) {
+        const body = await res.json().catch(() => ({}));
+        if (body.error === "eoc_locked") {
+          const lockRes = await fetch("/api/exam/eoc-lockout", {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          if (lockRes.ok) {
+            const lockData = await lockRes.json();
+            setEocLocked(true);
+            setDaysRemaining(lockData.daysRemaining ?? 0);
+            setNextEligibleDate(lockData.nextEligibleDate ?? null);
+            setShowQuiz(false);
+          }
+        }
+      }
     } catch (err) {
       console.error("Error sending exam completion:", err);
     }
@@ -202,6 +238,37 @@ export default function EndOfCourseExamPage() {
               <div className="text-white text-xl font-semibold">
                 {checkingCompletion ? "Checking completion status..." : "Loading End-of-Course Exam..."}
               </div>
+            </div>
+          </div>
+        </main>
+      </AuthGuard>
+    );
+  }
+
+  if (lockoutVerifyError) {
+    return (
+      <AuthGuard>
+        <main className="min-h-screen bg-gradient-to-b from-[#0a1a2e] via-[#1e3a5f] to-[#0a1a2e] relative overflow-hidden">
+          <Header />
+          <StarsBackground />
+          <div className="relative z-10 min-h-screen flex flex-col items-center justify-center pt-20 pb-8 px-4 md:px-8">
+            <div className="bg-gradient-to-br from-[#1a1f3a]/95 to-[#0a0e27]/95 backdrop-blur-lg rounded-3xl border-2 border-cyan-500/40 shadow-2xl p-8 md:p-10 max-w-lg w-full text-center">
+              <h2 className="text-2xl font-bold text-white mb-4">Could not verify exam status</h2>
+              <p className="text-gray-300 mb-6">
+                We could not confirm whether you are eligible for the End-of-Course Exam. Check your connection and try again.
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setLockoutVerifyError(false);
+                  setCheckingCompletion(true);
+                  setLoading(true);
+                  checkCompletion();
+                }}
+                className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl transition-all"
+              >
+                Try again
+              </button>
             </div>
           </div>
         </main>
@@ -268,18 +335,12 @@ export default function EndOfCourseExamPage() {
               <p className="text-gray-400 text-sm mb-6">
                 We recommend using this time to ace the Practice Exam—it will help you pass the End-of-Course Exam and prepare for the Florida State Exam.
               </p>
-              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <div className="flex justify-center">
                 <button
                   onClick={() => router.push("/practice-exam")}
                   className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-600 hover:to-blue-600 text-white font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 active:scale-95 shadow-lg shadow-cyan-500/30"
                 >
-                  Take the Practice Exam
-                </button>
-                <button
-                  onClick={() => router.push("/")}
-                  className="px-6 py-3 bg-white/10 border border-white/20 hover:bg-white/15 text-gray-200 font-medium rounded-xl transition-all"
-                >
-                  Back to Home
+                  Take Practice Exam
                 </button>
               </div>
             </div>

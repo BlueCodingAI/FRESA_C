@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
+import { getEocLockoutPayload } from '@/lib/eoc-lockout'
 
 // GET - Get all questions for Practice/End-of-Course Exam
+// Use ?for=end-of-course when loading the official End-of-Course Exam (enforces 30-day lockout server-side).
 export async function GET(request: NextRequest) {
   try {
     const token =
@@ -16,6 +18,33 @@ export async function GET(request: NextRequest) {
     const decoded = verifyToken(token)
     if (!decoded) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 })
+    }
+
+    const forExam = request.nextUrl.searchParams.get('for')
+    if (forExam === 'end-of-course') {
+      const user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+        select: { endOfCourseFailedAt: true, endOfCoursePassedAt: true },
+      })
+      if (!user) {
+        return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      }
+      const lock = getEocLockoutPayload(
+        decoded.role,
+        user.endOfCourseFailedAt,
+        user.endOfCoursePassedAt
+      )
+      if (lock.locked) {
+        return NextResponse.json(
+          {
+            error: 'eoc_locked',
+            locked: true,
+            daysRemaining: lock.daysRemaining,
+            nextEligibleDate: lock.nextEligibleDate,
+          },
+          { status: 403 }
+        )
+      }
     }
 
     // Get exam chapter settings (how many questions from each chapter)

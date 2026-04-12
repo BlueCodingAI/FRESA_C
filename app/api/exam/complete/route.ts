@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { verifyToken } from '@/lib/auth'
 import { sendEmail } from '@/lib/email'
 import { getEmailTemplate } from '@/lib/email-templates'
+import { isEocRetakeBlocked } from '@/lib/eoc-lockout'
 
 // POST - Complete End-of-Course Exam
 export async function POST(request: NextRequest) {
@@ -29,9 +30,34 @@ export async function POST(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { name: true, email: true, createdAt: true },
+      select: {
+        name: true,
+        email: true,
+        createdAt: true,
+        endOfCourseFailedAt: true,
+        endOfCoursePassedAt: true,
+      },
     })
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 })
+
+    if (examType === 'end-of-course') {
+      if (
+        isEocRetakeBlocked(
+          decoded.role,
+          user.endOfCourseFailedAt,
+          user.endOfCoursePassedAt
+        )
+      ) {
+        return NextResponse.json(
+          {
+            error: 'eoc_locked',
+            message:
+              'You cannot submit the End-of-Course Exam until the 30-day waiting period has ended.',
+          },
+          { status: 403 }
+        )
+      }
+    }
 
     const percentage = total > 0 ? Math.round((score / total) * 100) : 0
     const passed = percentage >= 75 // End-of-Course Exam passing score is 75%
@@ -86,7 +112,7 @@ export async function POST(request: NextRequest) {
       await prisma.user.update({
         where: { id: decoded.id },
         data: { endOfCourseFailedAt: failedAt },
-      }).catch(() => {})
+      })
 
       const finishDate = failedAt.toLocaleString('en-US', {
         year: 'numeric',
