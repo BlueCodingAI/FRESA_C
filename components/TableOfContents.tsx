@@ -81,6 +81,9 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
     return match ? parseInt(match[1]) : null;
   };
 
+  const getChapterTargetSectionKey = (chapterNumber: number) =>
+    `targetSection-chapter-${chapterNumber}`;
+
   // Check if a chapter is accessible (all previous chapters must have passed quizzes)
   const isChapterAccessible = (targetChapterNumber: number): boolean => {
     if (fullCourseAccess) {
@@ -130,8 +133,12 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
         return;
       }
       
-      // Store section ID (or 'quiz') in sessionStorage so the chapter page applies it on load
-      sessionStorage.setItem('targetSection', item.sectionId);
+      // Store section target per chapter so it cannot leak into other chapter routes.
+      if (targetChapterNumber) {
+        sessionStorage.setItem(getChapterTargetSectionKey(targetChapterNumber), item.sectionId);
+      }
+      // Backward cleanup for legacy global key behavior
+      sessionStorage.removeItem('targetSection');
       
       if (pathname === item.path || currentPath === item.path) {
         // Already on this chapter page - trigger section change immediately

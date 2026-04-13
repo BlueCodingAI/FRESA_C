@@ -44,6 +44,14 @@ export default function SearchBar({ onOpen }: SearchBarProps) {
   const searchRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const getChapterNumberFromPath = (path: string): number | null => {
+    const match = path.match(/\/chapter\/(\d+)/);
+    return match ? parseInt(match[1], 10) : null;
+  };
+
+  const getChapterTargetSectionKey = (chapterNumber: number) =>
+    `targetSection-chapter-${chapterNumber}`;
+
   // Ensure component is mounted before using portal
   useEffect(() => {
     setMounted(true);
@@ -215,12 +223,20 @@ export default function SearchBar({ onOpen }: SearchBarProps) {
       // Navigate based on result type
       if (result.type === 'section' && result.sectionId && result.path) {
         // Navigate to specific section
-        sessionStorage.setItem('targetSection', result.sectionId);
+        const targetChapterNumber = getChapterNumberFromPath(result.path);
+        if (targetChapterNumber) {
+          sessionStorage.setItem(getChapterTargetSectionKey(targetChapterNumber), result.sectionId);
+        }
+        sessionStorage.removeItem('targetSection');
         // Use window.location for full page navigation to ensure state is reset
         window.location.href = result.path;
       } else if (result.type === 'quizQuestion' && result.path) {
         // Navigate to chapter and show quiz
-        sessionStorage.setItem('targetSection', 'quiz');
+        const targetChapterNumber = getChapterNumberFromPath(result.path);
+        if (targetChapterNumber) {
+          sessionStorage.setItem(getChapterTargetSectionKey(targetChapterNumber), 'quiz');
+        }
+        sessionStorage.removeItem('targetSection');
         window.location.href = result.path;
       } else if (result.type === 'chapter' && result.path) {
         // Navigate to chapter

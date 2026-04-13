@@ -65,6 +65,7 @@ export default function ChapterPage() {
   const fullCourseAccess = courseNavAccess === "staff";
   const fullCourseAccessRef = useRef(fullCourseAccess);
   const userProgressRef = useRef<any>(null);
+  const chapterTargetSectionKey = chapterNumber ? `targetSection-chapter-${chapterNumber}` : null;
 
   useEffect(() => {
     fullCourseAccessRef.current = fullCourseAccess;
@@ -320,19 +321,24 @@ export default function ChapterPage() {
         setSections(dbSections);
         
         // Process explicit navigation from menu first (so "last section" or "quiz" opens on first try)
-        const targetSection = sessionStorage.getItem('targetSection');
+        const targetSection =
+          (chapterTargetSectionKey ? sessionStorage.getItem(chapterTargetSectionKey) : null) ||
+          sessionStorage.getItem('targetSection');
         if (targetSection && dbSections.length > 0) {
           if (targetSection === 'quiz') {
             setShowQuiz(true);
+            if (chapterTargetSectionKey) sessionStorage.removeItem(chapterTargetSectionKey);
             sessionStorage.removeItem('targetSection');
             setActivePlayingSectionId(null);
           } else {
             const sectionExists = dbSections.some((s) => s.id === targetSection);
             if (sectionExists) {
               setCurrentSection(targetSection);
+              if (chapterTargetSectionKey) sessionStorage.removeItem(chapterTargetSectionKey);
               sessionStorage.removeItem('targetSection');
               setActivePlayingSectionId(null);
             } else {
+              if (chapterTargetSectionKey) sessionStorage.removeItem(chapterTargetSectionKey);
               sessionStorage.removeItem('targetSection');
             }
           }
