@@ -237,8 +237,11 @@ export default function ChapterPage() {
         }
       }
 
-      // Check if all previous chapters are completed
-      for (let chNum = 1; chNum < chapterNumber; chNum++) {
+      // Registered users are treated as having baseline Chapter 1 access.
+      // So Chapter 3+ requires passing from Chapter 2 onward.
+      const requiredStartChapter = 2;
+      // Check if all required previous chapters are completed
+      for (let chNum = requiredStartChapter; chNum < chapterNumber; chNum++) {
         const progress = progressToCheck.find((p: any) => p.chapterNumber === chNum);
         if (!progress || !progress.quizCompleted || progress.quizScore < (progress.quizTotal * 0.75)) {
           // Previous chapter not completed - redirect to that chapter

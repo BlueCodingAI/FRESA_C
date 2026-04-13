@@ -101,8 +101,10 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
       return true;
     }
     
-    // Check if all previous chapters (1 to targetChapterNumber - 1) have passed quizzes
-    for (let chNum = 1; chNum < targetChapterNumber; chNum++) {
+    // Registered users are treated as having baseline Chapter 1 access.
+    const requiredStartChapter = hasAuthToken ? 2 : 1;
+    // Check if all required previous chapters have passed quizzes.
+    for (let chNum = requiredStartChapter; chNum < targetChapterNumber; chNum++) {
       const progress = allUserProgress.find((p: UserProgress) => p.chapterNumber === chNum);
       if (!progress || !progress.quizCompleted || progress.quizScore < (progress.quizTotal * 0.75)) {
         return false; // Previous chapter not passed
@@ -121,8 +123,12 @@ export default function TableOfContents({ items, currentPath, activeSectionId, a
       // Check if target chapter is accessible
       if (targetChapterNumber && !isChapterAccessible(targetChapterNumber)) {
         // Find which chapter is blocking access
-        let blockingChapter = 1;
-        for (let chNum = 1; chNum < targetChapterNumber; chNum++) {
+        const hasAuthToken = typeof document !== "undefined" && document.cookie
+          .split("; ")
+          .some((row) => row.startsWith("auth-token="));
+        const requiredStartChapter = hasAuthToken ? 2 : 1;
+        let blockingChapter = requiredStartChapter;
+        for (let chNum = requiredStartChapter; chNum < targetChapterNumber; chNum++) {
           const progress = allUserProgress.find((p: UserProgress) => p.chapterNumber === chNum);
           if (!progress || !progress.quizCompleted || progress.quizScore < (progress.quizTotal * 0.75)) {
             blockingChapter = chNum;
